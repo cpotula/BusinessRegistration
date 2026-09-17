@@ -1,6 +1,8 @@
 using BusinessPortal.API.Data;
 using BusinessPortal.API.DTOs;
 using BusinessPortal.API.Models;
+using BusinessPortal.API.Plans;
+using BusinessPortal.API.Search;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -32,10 +34,11 @@ public class ProductsController : ControllerBase
         if ((!business.IsActive || !business.IsPublished) && !CanManage(business))
             return NotFound();
 
+        var manage = CanManage(business);
         var products = await _db.Products
             .Include(p => p.Images)
             .Include(p => p.Videos)
-            .Where(p => p.BusinessId == businessId && p.IsActive)
+            .Where(p => p.BusinessId == businessId && (manage || (p.IsActive && p.IsApproved)))
             .OrderByDescending(p => p.CreatedAt)
             .Select(p => ToDto(p))
             .ToListAsync();
@@ -54,26 +57,38 @@ public class ProductsController : ControllerBase
 
         var query = _db.Products
             .Include(p => p.Business)
-            .Where(p => p.IsActive && p.Business!.IsActive && p.Business.IsPublished);
+            .Include(p => p.Images)
+            .Where(p => p.IsActive && p.IsApproved && p.Business!.IsActive && p.Business.IsPublished);
 
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim().ToLower();
-            query = query.Where(p =>
-                p.Name.ToLower().Contains(term) ||
-                (p.Description != null && p.Description.ToLower().Contains(term)) ||
-                p.Business!.Name.ToLower().Contains(term));
-        }
+        // Synonym-aware search matches a product when every word of the query
+        // (expanded with synonyms, e.g. "maggam" -> blouse, "decor" -> home
+        // decoration, "bugger" -> burger) appears in its name, description or
+        // business name. Filtered in memory so the query stays transportable.
+        var termSets = (!string.IsNullOrWhiteSpace(q) ? q : "")
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(w => ProductSynonyms.Expand(w.Trim().ToLower()))
+            .ToList();
 
-        var total = await query.CountAsync();
-        var items = await query
+        var matches = (await query.ToListAsync())
+            .Where(p =>
+            {
+                if (termSets.Count == 0) return true;
+                var name = p.Name.ToLower();
+                var desc = p.Description?.ToLower() ?? "";
+                var brand = p.Business!.Name.ToLower();
+                return termSets.All(ts => ts.Any(t => name.Contains(t) || desc.Contains(t) || brand.Contains(t)));
+            })
             .OrderByDescending(p => p.CreatedAt)
+            .ToList();
+
+        var total = matches.Count;
+        var items = matches
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(p => new ProductSearchItemDto(
-                p.Id, p.Name, p.Description, p.Price,
+                p.Id, p.Name, p.Description, p.Price, p.StockQuantity,
                 p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).FirstOrDefault(),
                 p.BusinessId, p.Business!.Name, p.Business.Slug))
-            .ToListAsync();
+            .ToList();
 
         return Ok(new { items, total, page, pageSize });
     }
@@ -95,16 +110,97 @@ public class ProductsController : ControllerBase
             return NotFound();
 
         var business = product.Business;
-        if ((!business.IsActive || !business.IsPublished || !product.IsActive) && !CanManage(business))
+        if ((!business.IsActive || !business.IsPublished || !product.IsActive || !product.IsApproved) && !CanManage(business))
             return NotFound();
 
         return Ok(new ProductDetailDto(
-            product.Id, product.Name, product.Description, product.Price,
+            product.Id, product.Name, product.Description, product.Price, product.StockQuantity,
             product.Images.OrderBy(i => i.SortOrder).Select(i => i.Url),
             product.Videos.OrderBy(v => v.SortOrder).Select(v => new ProductVideoDto(v.Id, v.Url, v.Title)),
             business.Id, business.Name, business.Slug,
             business.Category!.Name, business.City, business.LogoUrl,
             business.ContactPhone, business.ContactWhatsApp));
+    }
+
+    // Public product reviews: approved only, Flipkart-style with a
+    // "verified buyer" badge when the reviewer has a confirmed order
+    // that included this product.
+    [HttpGet("{id:int}/reviews")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetReviews(int id)
+    {
+        var product = await _db.Products
+            .Include(p => p.Business)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        var business = product?.Business;
+        if (business is null)
+            return NotFound();
+        if ((!business.IsActive || !business.IsPublished || !product!.IsActive || !product.IsApproved) && !CanManage(business))
+            return NotFound();
+
+        var approved = await _db.ProductReviews
+            .Where(r => r.ProductId == id && r.IsApproved)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        var verifiedBuyerIds = await _db.Orders
+            .Where(o => o.Status == "Confirmed")
+            .Where(o => o.Items.Any(i => i.ProductId == id))
+            .Select(o => o.CustomerUserId)
+            .Distinct()
+            .ToListAsync();
+        var verifiedSet = verifiedBuyerIds.ToHashSet();
+
+        var averageRating = approved.Count > 0 ? approved.Average(r => r.Rating) : 0;
+        return Ok(new ProductReviewsResult(
+            Math.Round(averageRating, 1), approved.Count,
+            approved.Select(r => new ProductReviewDto(
+                r.Id, r.CustomerName, r.Rating, r.ReviewText, r.CreatedAt,
+                r.UserId.HasValue && verifiedSet.Contains(r.UserId.Value)))));
+    }
+
+    [HttpGet("{id:int}/my-review")]
+    [Authorize]
+    public async Task<IActionResult> MyReview(int id)
+    {
+        var review = await _db.ProductReviews
+            .Where(r => r.ProductId == id && r.UserId == GetUserId())
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync();
+        if (review is null)
+            return Ok((ProductReviewDto?)null);
+        return Ok(new ProductReviewDto(review.Id, review.CustomerName, review.Rating, review.ReviewText, review.CreatedAt, false));
+    }
+
+    [HttpPost("{id:int}/reviews")]
+    [Authorize(Roles = "Customer,Admin")]
+    public async Task<IActionResult> CreateReview(int id, [FromBody] ProductReviewCreateRequest request)
+    {
+        var product = await _db.Products
+            .Include(p => p.Business)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        var business = product?.Business;
+        if (business is null || !business.IsActive || !business.IsPublished || !product!.IsActive || !product.IsApproved)
+            return NotFound();
+
+        var userId = GetUserId();
+        var alreadyReviewed = await _db.ProductReviews
+            .AnyAsync(r => r.ProductId == id && r.UserId == userId);
+        if (alreadyReviewed)
+            return BadRequest(new { message = "You have already reviewed this product." });
+
+        var review = new ProductReview
+        {
+            ProductId = id,
+            UserId = userId,
+            CustomerName = User.FindFirstValue(ClaimTypes.Name) ?? "Customer",
+            Rating = request.Rating,
+            ReviewText = request.ReviewText,
+            IsApproved = false
+        };
+        _db.ProductReviews.Add(review);
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Thank you! Your review will appear once approved." });
     }
 
     [HttpPost]
@@ -118,13 +214,19 @@ public class ProductsController : ControllerBase
         if (!IsAdmin() && business.OwnerUserId != GetUserId())
             return Forbid();
 
+        var usage = await SubscriptionsController.ComputeUsage(_db, businessId);
+        if (usage.ProductLimit is int limit && usage.ProductCount >= limit)
+            return BadRequest(new { message = $"Your {usage.PlanName} plan allows selling up to {limit} products. Upgrade to Standard (60 products) or Gold (unlimited) to list more." });
+
         var product = new Product
         {
             BusinessId = businessId,
             Name = request.Name,
             Description = request.Description,
             Price = request.Price,
-            IsActive = true
+            StockQuantity = request.StockQuantity ?? 10,
+            IsActive = true,
+            IsApproved = false
         };
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
@@ -148,6 +250,40 @@ public class ProductsController : ControllerBase
         product.Description = request.Description;
         product.Price = request.Price;
         product.IsActive = request.IsActive;
+        if (request.StockQuantity is not null)
+            product.StockQuantity = request.StockQuantity.Value;
+        product.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPut("{id:int}/inventory")]
+    [Authorize(Roles = "BusinessOwner,Admin")]
+    public async Task<IActionResult> UpdateInventory(int id, [FromBody] ProductInventoryUpdateRequest request)
+    {
+        var product = await _db.Products
+            .Include(p => p.Business)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (product is null)
+            return NotFound();
+
+        if (!IsAdmin() && product.Business!.OwnerUserId != GetUserId())
+            return Forbid();
+
+        if (request.Price is not null)
+        {
+            if (request.Price < 0)
+                return BadRequest(new { message = "Price cannot be negative." });
+            product.Price = request.Price;
+        }
+
+        if (request.StockQuantity is not null)
+        {
+            if (request.StockQuantity < 0)
+                return BadRequest(new { message = "Stock quantity cannot be negative." });
+            product.StockQuantity = request.StockQuantity.Value;
+        }
+
         product.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return NoContent();
@@ -279,7 +415,7 @@ public class ProductsController : ControllerBase
     }
 
     private static ProductDto ToDto(Product p) => new(
-        p.Id, p.Name, p.Description, p.Price, p.IsActive,
+        p.Id, p.Name, p.Description, p.Price, p.IsActive, p.IsApproved, p.StockQuantity,
         p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url),
         p.Videos.OrderBy(v => v.SortOrder).Select(v => new ProductVideoDto(v.Id, v.Url, v.Title)));
 }

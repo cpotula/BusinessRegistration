@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { ProductSearchItem } from '../api/types'
+import ProductCard from '../components/ProductCard'
 
 // Search results page - lists every matching product/service; each result
 // links to its product details page.
@@ -69,26 +70,15 @@ export default function ProductSearch() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
           {items.map((p) => (
-            <Link
+            <ProductCard
               key={p.id}
               to={`/products/${p.id}`}
-              className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-primary-200 transition-all duration-300"
-            >
-              <div className="aspect-square bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center overflow-hidden">
-                {p.imageUrl ? (
-                  <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                ) : (
-                  <svg className="w-10 h-10 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                )}
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-sm text-gray-900 truncate group-hover:text-primary-700 transition-colors">{p.name}</h3>
-                <p className="text-xs text-gray-400 truncate mt-0.5">{p.businessName}</p>
-                {p.price != null && <p className="text-primary-700 font-bold text-sm mt-2">₹{p.price.toLocaleString('en-IN')}</p>}
-              </div>
-            </Link>
+              name={p.name}
+              price={p.price}
+              imageUrl={p.imageUrl}
+              stockQuantity={p.stockQuantity}
+              subtitle={p.businessName}
+            />
           ))}
         </div>
       )}

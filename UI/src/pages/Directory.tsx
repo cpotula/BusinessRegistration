@@ -44,36 +44,38 @@ export default function Directory() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Business Directory</h1>
-        <p className="text-gray-500">Discover local businesses, products and services</p>
+      <div className="mb-8 animate-fadeIn">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 tracking-tight">Business Directory</h1>
+          <p className="text-gray-500">Discover local businesses, products and services</p>
+        </div>
       </div>
 
       {/* Search -> Discover -> Evaluate -> Contact */}
-      <form onSubmit={(e) => { e.preventDefault(); applySearch() }} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 mb-8">
+      <form onSubmit={(e) => { e.preventDefault(); applySearch() }} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 mb-8 shadow-card rounded-2xl bg-white p-3 border border-gray-100">
         <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input
             value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }}
             placeholder="Search by business, product/service or city..."
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+            className="w-full pl-11 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500/40 bg-gray-50/60 hover:bg-gray-50 transition-colors"
           />
         </div>
         <select
           value={categoryId ?? ''} onChange={(e) => { setCategoryId(e.target.value ? Number(e.target.value) : null); setPage(1) }}
-          className="px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="px-4 py-3 rounded-xl border border-transparent bg-gray-50/60 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/40 text-gray-700 transition-colors"
         >
           <option value="">All categories</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select
           value={city} onChange={(e) => { setCity(e.target.value); setPage(1) }}
-          className="px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="px-4 py-3 rounded-xl border border-transparent bg-gray-50/60 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500/40 text-gray-700 transition-colors"
         >
           <option value="">All locations</option>
           {cities.map((cty) => <option key={cty} value={cty}>{cty}</option>)}
         </select>
-        <button type="submit" className="px-8 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors shadow-sm">
+        <button type="submit" className="px-8 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 shadow-md shadow-primary-200/60 hover:shadow-lg transition-all active:scale-[0.98]">
           Search
         </button>
       </form>

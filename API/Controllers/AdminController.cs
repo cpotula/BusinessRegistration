@@ -27,6 +27,8 @@ public class AdminController : ControllerBase
             TotalUsers: await _db.Users.CountAsync(u => u.IsActive),
             TotalBusinesses: await _db.Businesses.CountAsync(),
             ActiveBusinesses: await _db.Businesses.CountAsync(b => b.IsActive),
+            PendingBusinesses: await _db.Businesses.CountAsync(b => !b.IsActive && !b.IsPublished),
+            PendingProducts: await _db.Products.CountAsync(p => !p.IsApproved),
             PendingTestimonials: await _db.Testimonials.CountAsync(t => !t.IsApproved),
             UnreadEnquiries: await _db.Enquiries.CountAsync(e => !e.IsRead),
             ActiveSubscriptions: await _db.Subscriptions.CountAsync(s => s.PaymentStatus == SubscriptionStatus.Paid && s.EndDate > now),
@@ -155,6 +157,9 @@ public class AdminController : ControllerBase
             case "draft":
                 query = query.Where(b => !b.IsPublished);
                 break;
+            case "pending":
+                query = query.Where(b => !b.IsActive && !b.IsPublished);
+                break;
         }
 
         if (!string.IsNullOrWhiteSpace(q))
@@ -182,6 +187,70 @@ public class AdminController : ControllerBase
             return NotFound();
 
         business.IsActive = isActive;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // Admin approval: activates AND publishes a newly registered business so it
+    // appears on the public website. The business stays hidden until approved.
+    [HttpPut("businesses/{id:int}/approve")]
+    public async Task<IActionResult> ApproveBusiness(int id, [FromBody] bool approved)
+    {
+        var business = await _db.Businesses.FindAsync(id);
+        if (business is null)
+            return NotFound();
+
+        business.IsActive = approved;
+        business.IsPublished = approved;
+        business.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // All products with their approval state. status=pending lists products
+    // waiting for admin approval; status=approved lists approved ones.
+    [HttpGet("products")]
+    public async Task<IActionResult> Products([FromQuery] string? status)
+    {
+        IQueryable<Product> query = _db.Products
+            .Include(p => p.Business!)
+            .ThenInclude(b => b!.OwnerUser);
+
+        switch (status?.ToLower())
+        {
+            case "pending":
+                query = query.Where(p => !p.IsApproved);
+                break;
+            case "approved":
+                query = query.Where(p => p.IsApproved);
+                break;
+        }
+
+        var items = await query
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new AdminProductListItemDto(
+                p.Id, p.Name, p.Description, p.Price,
+                p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).FirstOrDefault(),
+                p.BusinessId, p.Business!.Name, p.Business!.OwnerUser!.Email,
+                p.IsActive, p.IsApproved, p.CreatedAt))
+            .ToListAsync();
+
+        return Ok(items);
+    }
+
+    // Admin approval of a product: approve=true shows it on the website,
+    // approve=false keeps it hidden (pending). Only admins can do this.
+    [HttpPut("products/{id:int}/approve")]
+    public async Task<IActionResult> ApproveProduct(int id, [FromBody] bool approved)
+    {
+        var product = await _db.Products.FindAsync(id);
+        if (product is null)
+            return NotFound();
+
+        product.IsApproved = approved;
+        if (approved)
+            product.IsActive = true;
+        product.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return NoContent();
     }
@@ -229,6 +298,46 @@ public class AdminController : ControllerBase
             return NotFound();
 
         _db.Testimonials.Remove(testimonial);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpGet("product-reviews")]
+    public async Task<IActionResult> ProductReviews([FromQuery] bool? pendingOnly)
+    {
+        IQueryable<ProductReview> query = _db.ProductReviews.Include(r => r.Product).ThenInclude(p => p!.Business);
+        if (pendingOnly.HasValue && pendingOnly.Value)
+            query = query.Where(r => !r.IsApproved);
+
+        var items = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new ProductReviewRow(
+                r.Id, r.Product!.Name, r.Product!.Business!.Name,
+                r.CustomerName, r.Rating, r.ReviewText, r.IsApproved))
+            .ToListAsync();
+        return Ok(items);
+    }
+
+    [HttpPut("product-reviews/{id:int}/approve")]
+    public async Task<IActionResult> ApproveProductReview(int id, [FromBody] bool approved)
+    {
+        var review = await _db.ProductReviews.FindAsync(id);
+        if (review is null)
+            return NotFound();
+
+        review.IsApproved = approved;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete("product-reviews/{id:int}")]
+    public async Task<IActionResult> DeleteProductReview(int id)
+    {
+        var review = await _db.ProductReviews.FindAsync(id);
+        if (review is null)
+            return NotFound();
+
+        _db.ProductReviews.Remove(review);
         await _db.SaveChangesAsync();
         return NoContent();
     }

@@ -1,49 +1,28 @@
-import { useEffect, useState, FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { BusinessSummary, Category, Announcement, ProductSearchItem } from '../api/types'
 import BusinessCard from '../components/BusinessCard'
+import ProductCard from '../components/ProductCard'
 
 export default function Home() {
   const [featured, setFeatured] = useState<BusinessSummary[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [products, setProducts] = useState<ProductSearchItem[]>([])
-  const [term, setTerm] = useState('')
-  const navigate = useNavigate()
 
   useEffect(() => {
     api.get('/businesses?page=1&pageSize=6').then(({ data }) => setFeatured(data.items || []))
     api.get('/categories').then(({ data }) => setCategories(data))
     api.get('/announcements?take=3').then(({ data }) => setAnnouncements(data))
-    api.get('/products/search?page=1&pageSize=8').then(({ data }) => setProducts(data.items || []))
+    api.get('/products/search?page=1&pageSize=16').then(({ data }) => {
+      const items = (((data as { items?: ProductSearchItem[] }).items) || []).filter((p) => p.businessId !== 14)
+      setProducts(items.slice(0, 8))
+    })
   }, [])
-
-  const submitSearch = (e: FormEvent) => {
-    e.preventDefault()
-    if (term.trim()) navigate(`/search?q=${encodeURIComponent(term.trim())}`)
-  }
 
   return (
     <div className="space-y-16">
-      {/* Search - top of the home page */}
-      <form onSubmit={submitSearch} className="flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto">
-        <div className="relative flex-1">
-          <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            placeholder="Search products and services..."
-            className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-        </div>
-        <button type="submit" className="px-8 py-4 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 shadow-lg transition-colors">
-          Search
-        </button>
-      </form>
-
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white">
         <div className="absolute inset-0 opacity-10">
@@ -103,9 +82,9 @@ export default function Home() {
             <Link
               key={c.id}
               to={`/directory?categoryId=${c.id}`}
-              className="group bg-white border border-gray-200 rounded-2xl p-6 text-center hover:border-primary-300 hover:shadow-md transition-all duration-300"
+              className="group card p-6 text-center hover:-translate-y-0.5 transition-transform duration-300"
             >
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${['from-blue-400 to-blue-600','from-emerald-400 to-emerald-600','from-rose-400 to-rose-600','from-amber-400 to-amber-600','from-violet-400 to-violet-600','from-cyan-400 to-cyan-600','from-pink-400 to-pink-600','from-teal-400 to-teal-600'][i % 8]} flex items-center justify-center text-white text-xl mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${['from-blue-400 to-blue-600','from-emerald-400 to-emerald-600','from-rose-400 to-rose-600','from-amber-400 to-amber-600','from-violet-400 to-violet-600','from-cyan-400 to-cyan-600','from-pink-400 to-pink-600','from-teal-400 to-teal-600'][i % 8]} flex items-center justify-center text-white text-2xl mx-auto mb-3 group-hover:scale-110 shadow-lg shadow-black/5 group-hover:-rotate-6 transition-all duration-300`}>
                 {['🍽️','🛍️','💆','🏠','💻','📚','🚗','🏢'][i % 8]}
               </div>
               <h3 className="font-semibold text-gray-800 group-hover:text-primary-700 transition-colors">{c.name}</h3>
@@ -129,26 +108,15 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
             {products.map((p) => (
-              <Link
+              <ProductCard
                 key={p.id}
                 to={`/products/${p.id}`}
-                className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-primary-200 transition-all duration-300"
-              >
-                <div className="aspect-square bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center overflow-hidden">
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  ) : (
-                    <svg className="w-10 h-10 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-sm text-gray-900 truncate group-hover:text-primary-700 transition-colors">{p.name}</h3>
-                  <p className="text-xs text-gray-400 truncate mt-0.5">{p.businessName}</p>
-                  {p.price != null && <p className="text-primary-700 font-bold text-sm mt-2">₹{p.price.toLocaleString('en-IN')}</p>}
-                </div>
-              </Link>
+                name={p.name}
+                price={p.price}
+                imageUrl={p.imageUrl}
+                stockQuantity={p.stockQuantity}
+                subtitle={p.businessName}
+              />
             ))}
           </div>
         </section>

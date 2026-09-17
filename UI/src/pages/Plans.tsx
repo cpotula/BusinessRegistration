@@ -66,21 +66,25 @@ export default function Plans() {
       <section>
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Simple, Transparent Pricing</h2>
-          <p className="text-gray-500 mt-2">All plans include the complete feature set. Choose your billing period.</p>
+          <p className="text-gray-500 mt-2">Pick a plan for your year of listing. Base 10 products, Standard 60, Gold unlimited.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(plans.length ? plans : [{ name: 'Quarterly', months: 3, amount: 1500, description: '' }, { name: 'Half-Yearly', months: 6, amount: 2800, description: '' }, { name: 'Annual', months: 12, amount: 5000, description: '' }] as Plan[]).map((p) => {
-            const featured = p.name === 'Half-Yearly'
+          {(plans.length ? plans : [{ name: 'Base', months: 12, amount: 1500, description: 'list up to 10 products', productLimit: 10 }, { name: 'Standard', months: 12, amount: 2800, description: 'list up to 60 products', productLimit: 60 }, { name: 'Gold', months: 12, amount: 5000, description: 'sell unlimited products', productLimit: null }] as Plan[]).map((p) => {
+            const featured = p.name === 'Standard'
             return (
               <div key={p.name} className={`relative bg-white rounded-3xl border-2 p-8 flex flex-col ${featured ? 'border-primary-500 shadow-xl' : 'border-gray-200'}`}>
                 {featured && <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary-600 text-white text-xs font-semibold rounded-full">Most Popular</span>}
                 <h3 className="text-lg font-bold text-gray-900">{p.name}</h3>
                 <p className="mt-4">
                   <span className="text-4xl font-extrabold text-gray-900">₹{p.amount.toLocaleString()}</span>
-                  <span className="text-gray-400 text-sm"> / {p.months} months</span>
+                  <span className="text-gray-400 text-sm"> / year</span>
                 </p>
                 <p className="text-sm text-gray-500 mt-2 min-h-[40px]">{p.description}</p>
                 <ul className="mt-6 space-y-2 text-sm text-gray-600 flex-1">
+                  <li className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    {p.productLimit == null ? 'Unlimited products for a year' : `List up to ${p.productLimit} products for a year`}
+                  </li>
                   {['Single-page business profile', 'Directory search & category listing', 'Photo/logo uploads & product showcase', 'Enquiry inbox with notifications', 'WhatsApp share & chat links', 'Business hours & contact details'].map((f) => (
                     <li key={f} className="flex items-start gap-2">
                       <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>

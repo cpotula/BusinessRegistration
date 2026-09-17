@@ -18,6 +18,8 @@ public record AdminDashboardDto(
     int TotalUsers,
     int TotalBusinesses,
     int ActiveBusinesses,
+    int PendingBusinesses,
+    int PendingProducts,
     int PendingTestimonials,
     int UnreadEnquiries,
     int ActiveSubscriptions,
@@ -36,6 +38,19 @@ public record AdminBusinessListItemDto(
     bool IsActive,
     bool IsPublished,
     DateTime? SubscriptionExpiresOn,
+    DateTime CreatedAt);
+
+public record AdminProductListItemDto(
+    int Id,
+    string Name,
+    string? Description,
+    decimal? Price,
+    string? ImageUrl,
+    int BusinessId,
+    string BusinessName,
+    string OwnerEmail,
+    bool IsActive,
+    bool IsApproved,
     DateTime CreatedAt);
 
 public record ExpiringBusinessDto(

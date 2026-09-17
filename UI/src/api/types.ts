@@ -22,6 +22,7 @@ export interface Testimonial {
   rating: number
   reviewText: string | null
   createdAt: string
+  isVerified: boolean
 }
 
 export interface BusinessDetail {
@@ -47,12 +48,29 @@ export interface BusinessDetail {
   testimonials: Testimonial[]
 }
 
+export interface ProductReview {
+  id: number
+  customerName: string
+  rating: number
+  reviewText: string | null
+  createdAt: string
+  isVerified: boolean
+}
+
+export interface ProductReviewsResult {
+  averageRating: number
+  total: number
+  reviews: ProductReview[]
+}
+
 export interface Product {
   id: number
   name: string
   description: string | null
   price: number | null
   isActive: boolean
+  isApproved: boolean
+  stockQuantity: number
   images: string[]
   videos: { id: number; url: string; title: string | null }[]
 }
@@ -62,6 +80,7 @@ export interface ProductSearchItem {
   name: string
   description: string | null
   price: number | null
+  stockQuantity: number
   imageUrl: string | null
   businessId: number
   businessName: string
@@ -73,6 +92,7 @@ export interface ProductDetailInfo {
   name: string
   description: string | null
   price: number | null
+  stockQuantity: number
   images: string[]
   videos: { id: number; url: string; title: string | null }[]
   businessId: number
@@ -90,6 +110,7 @@ export interface Plan {
   months: number
   amount: number
   description: string
+  productLimit?: number | null
 }
 
 export interface Subscription {
@@ -129,6 +150,8 @@ export interface AdminDashboard {
   totalUsers: number
   totalBusinesses: number
   activeBusinesses: number
+  pendingBusinesses: number
+  pendingProducts: number
   pendingTestimonials: number
   unreadEnquiries: number
   activeSubscriptions: number
@@ -148,6 +171,20 @@ export interface AdminBusinessListItem {
   isActive: boolean
   isPublished: boolean
   subscriptionExpiresOn: string | null
+  createdAt: string
+}
+
+export interface AdminProductListItem {
+  id: number
+  name: string
+  description: string | null
+  price: number | null
+  imageUrl: string | null
+  businessId: number
+  businessName: string
+  ownerEmail: string
+  isActive: boolean
+  isApproved: boolean
   createdAt: string
 }
 
@@ -171,4 +208,70 @@ export interface PendingPayment {
   startDate: string
   endDate: string
   createdAt: string
+}
+
+export interface OrderItemInfo {
+  id: number
+  productId: number
+  productName: string
+  businessId: number
+  businessName: string
+  unitPrice: number
+  quantity: number
+  imageUrl: string | null
+}
+
+export interface OrderInfo {
+  id: number
+  orderNumber: string
+  customerName: string
+  customerEmail: string | null
+  customerPhone: string | null
+  totalAmount: number
+  status: string
+  createdAt: string
+  items: OrderItemInfo[]
+}
+
+export interface NotificationInfo {
+  id: number
+  title: string
+  message: string
+  link: string | null
+  isRead: boolean
+  createdAt: string
+}
+
+export interface SoldPerProduct {
+  productId: number
+  productName: string
+  imageUrl: string | null
+  soldToday: number
+  soldThisMonth: number
+  soldThisYear: number
+  revenueToday: number
+  revenueThisMonth: number
+  revenueThisYear: number
+}
+
+export interface SoldSummary {
+  soldToday: number
+  soldThisMonth: number
+  soldThisYear: number
+  revenueToday: number
+  revenueThisMonth: number
+  revenueThisYear: number
+  products: SoldPerProduct[]
+}
+
+export interface SoldPeriodPoint {
+  key: string
+  units: number
+  revenue: number
+}
+
+export interface SoldByPeriod {
+  monthly: SoldPeriodPoint[]
+  quarterly: SoldPeriodPoint[]
+  yearly: SoldPeriodPoint[]
 }
