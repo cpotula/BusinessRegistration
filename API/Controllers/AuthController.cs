@@ -34,12 +34,18 @@ public class AuthController : ControllerBase
         if (existing)
             return BadRequest(new { message = "An account with this email already exists." });
 
+        var isCustomer = string.Equals(request.UserType, "customer", StringComparison.OrdinalIgnoreCase);
+
         var user = new User
         {
             Name = request.Name,
             Email = request.Email,
             Phone = request.Phone,
-            Role = UserRole.BusinessOwner,
+            Address = request.Address,
+            City = request.City,
+            State = request.State,
+            Pincode = request.Pincode,
+            Role = isCustomer ? UserRole.Customer : UserRole.BusinessOwner,
             PasswordHash = _hasher.HashPassword(null!, request.Password)
         };
 

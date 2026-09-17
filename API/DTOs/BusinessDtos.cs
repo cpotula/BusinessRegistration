@@ -72,6 +72,7 @@ public record TestimonialDto(
     string CustomerName,
     int Rating,
     string? ReviewText,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool IsVerified);
 
 public record PublishRequest(bool IsPublished);

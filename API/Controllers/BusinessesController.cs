@@ -102,7 +102,7 @@ public class BusinessesController : ControllerBase
         if (business is null || !await CanView(business))
             return NotFound();
 
-        return Ok(ToDetailDto(business));
+        return Ok(await ToDetailDto(business));
     }
 
     [HttpGet("{id:int}")]
@@ -113,7 +113,7 @@ public class BusinessesController : ControllerBase
         if (business is null || !await CanView(business))
             return NotFound();
 
-        return Ok(ToDetailDto(business));
+        return Ok(await ToDetailDto(business));
     }
 
     // "Help the visitor continue discovering alternatives": same category first,
@@ -170,10 +170,11 @@ public class BusinessesController : ControllerBase
             BusinessHours = request.BusinessHours,
             LogoUrl = request.LogoUrl,
             CoverUrl = request.CoverUrl,
-            // Doc journey: Register -> Create -> Preview -> Publish.
-            // Listings start as drafts; the owner publishes explicitly.
-            IsPublished = request.IsPublished,
-            IsActive = true
+            // A newly created business is NOT shown publicly until an admin
+            // approves it. It starts as pending: inactive + unpublished, so it
+            // never appears in the public directory on its own.
+            IsPublished = false,
+            IsActive = false
         };
 
         _db.Businesses.Add(business);
@@ -287,7 +288,7 @@ public class BusinessesController : ControllerBase
         return business.OwnerUserId == GetUserId();
     }
 
-    private static BusinessDetailDto ToDetailDto(Business business)
+    private async Task<BusinessDetailDto> ToDetailDto(Business business)
     {
         var approved = business.Testimonials
             .Where(t => t.IsApproved)
@@ -296,6 +297,16 @@ public class BusinessesController : ControllerBase
 
         var averageRating = approved.Count > 0 ? approved.Average(t => t.Rating) : 0;
 
+        // Flipkart-style "verified buyer": customers with a confirmed order
+        // from this business get a trust badge on their review.
+        var verifiedBuyerIds = await _db.Orders
+            .Where(o => o.Status == "Confirmed")
+            .Where(o => o.Items.Any(i => i.BusinessId == business.Id))
+            .Select(o => o.CustomerUserId)
+            .Distinct()
+            .ToListAsync();
+        var verifiedSet = verifiedBuyerIds.ToHashSet();
+
         return new BusinessDetailDto(
             business.Id, business.Name, business.Slug, business.Category!.Name,
             business.Description, business.ContactPhone, business.ContactWhatsApp,
@@ -303,7 +314,9 @@ public class BusinessesController : ControllerBase
             business.CoverUrl, business.WebsiteUrl, business.BusinessHours,
             business.IsPublished, business.IsActive, business.SubscriptionExpiresOn,
             Math.Round(averageRating, 1), business.Products.Count,
-            approved.Select(t => new TestimonialDto(t.Id, t.CustomerName, t.Rating, t.ReviewText, t.CreatedAt)));
+            approved.Select(t => new TestimonialDto(
+                t.Id, t.CustomerName, t.Rating, t.ReviewText, t.CreatedAt,
+                t.UserId.HasValue && verifiedSet.Contains(t.UserId.Value))));
     }
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

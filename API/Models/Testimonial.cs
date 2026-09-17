@@ -10,6 +10,8 @@ public class Testimonial
 
     public Business? Business { get; set; }
 
+    public int? UserId { get; set; }
+
     [Required, MaxLength(100)]
     public string CustomerName { get; set; } = string.Empty;
 

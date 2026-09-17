@@ -1,0 +1,49 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# .NET publish output
+Publish/
+publish/
+out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+
+# IDE folders
+.idea/
+.Rider/
+
+# Node
+node_modules/
+dist/
+
+# Uploads (runtime data)
+API/Uploads/
+Uploads/
+
+# Log files
+*.log
+*.log.err
+
+# OS files
+Thumbs.db
+.DS_Store
+tsconfig.tsbuildinfo

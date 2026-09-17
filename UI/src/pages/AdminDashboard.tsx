@@ -4,17 +4,17 @@ import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import {
   AdminDashboard as StatsType, Announcement, Category, Enquiry,
-  AdminBusinessListItem, ExpiringBusiness, PendingPayment,
+  AdminBusinessListItem, AdminProductListItem, ExpiringBusiness, PendingPayment,
 } from '../api/types'
 
-type Tab = 'overview' | 'users' | 'businesses' | 'categories' | 'subscriptions' | 'moderation' | 'announcements' | 'enquiries'
+type Tab = 'overview' | 'users' | 'businesses' | 'products' | 'categories' | 'subscriptions' | 'moderation' | 'announcements' | 'enquiries'
 
 const btn = 'px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-xl disabled:opacity-50'
 const input = 'border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent'
 
 /* ---------------- Overview: what needs my attention today? ---------------- */
 
-function Overview() {
+function Overview({ onReview, onReviewProducts }: { onReview?: () => void; onReviewProducts?: () => void }) {
   const [stats, setStats] = useState<StatsType | null>(null)
   const [expiring, setExpiring] = useState<ExpiringBusiness[]>([])
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([])
@@ -51,6 +51,8 @@ function Overview() {
     { label: 'Users', value: stats.totalUsers },
     { label: 'Businesses', value: stats.totalBusinesses },
     { label: 'Active Listings', value: stats.activeBusinesses },
+    { label: 'Pending Approvals', value: stats.pendingBusinesses, hot: true },
+    { label: 'Pending Products', value: stats.pendingProducts, hot: true },
     { label: 'Active Subscriptions', value: stats.activeSubscriptions },
     { label: 'Expiring ≤30 days', value: stats.expiringSoon },
     { label: 'Expired Listings', value: stats.expiredListings },
@@ -63,9 +65,10 @@ function Overview() {
     <div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {cards.map(c => (
-          <div key={c.label} className="bg-white rounded-2xl border border-gray-200 p-4">
+          <div key={c.label} className={`bg-white rounded-2xl border p-4 ${c.hot ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}>
             <p className="text-xs text-gray-500">{c.label}</p>
             <p className={`text-2xl font-bold mt-1 ${
+              c.hot && Number(c.value) > 0 ? 'text-amber-600' :
               ['Expiring ≤30 days', 'Expired Listings'].includes(c.label!) && Number(c.value) > 0 ? 'text-red-500' : 'text-gray-900'
             }`}>{c.value}</p>
           </div>
@@ -74,6 +77,30 @@ function Overview() {
 
       {/* Needs attention */}
       <h3 className="font-semibold text-gray-900 mb-3">Needs your attention</h3>
+
+      {stats.pendingBusinesses > 0 && (
+        <div className="bg-white rounded-2xl border border-amber-200 mb-4 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
+            <div>
+              <p className="text-amber-800 text-sm font-semibold">⏳ {stats.pendingBusinesses} new business{stats.pendingBusinesses === 1 ? '' : 'es'} pending approval</p>
+              <p className="text-xs text-gray-500 mt-0.5">Newly registered businesses stay hidden from the website until you approve them.</p>
+            </div>
+            {onReview && <button onClick={onReview} className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl">Review &amp; Approve</button>}
+          </div>
+        </div>
+      )}
+
+      {stats.pendingProducts > 0 && (
+        <div className="bg-white rounded-2xl border border-amber-200 mb-4 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
+            <div>
+              <p className="text-amber-800 text-sm font-semibold">🛍️ {stats.pendingProducts} product{stats.pendingProducts === 1 ? '' : 's'} pending approval</p>
+              <p className="text-xs text-gray-500 mt-0.5">New products stay hidden from the website until you approve them.</p>
+            </div>
+            {onReviewProducts && <button onClick={onReviewProducts} className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl">Review &amp; Approve</button>}
+          </div>
+        </div>
+      )}
 
       {pendingPayments.length > 0 && (
         <div className="bg-white rounded-2xl border border-yellow-200 mb-4 overflow-hidden">
@@ -179,6 +206,22 @@ function BizSec() {
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState('')
   const [q, setQ] = useState('')
+  const [notice, setNotice] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
+
+  const flash = (type: 'ok' | 'err', msg: string) => {
+    setNotice({ type, msg })
+    setTimeout(() => setNotice(null), 5000)
+  }
+
+  const errMsg = (e: unknown) => {
+    const err = e as { response?: { status?: number }; request?: unknown; message?: string }
+    const status = err.response?.status
+    if (status === 401) return 'Your login has expired. Log out, then log back in as admin (admin@businessportal.local) and try again.'
+    if (status === 403) return 'Only an admin can approve. Log in with the admin account (admin@businessportal.local), then try again.'
+    if (status === 404) return 'This business is no longer pending — it was already approved (or removed). The list has been refreshed.'
+    if (!err.response && err.request) return 'Cannot reach the server. Make sure the app is running (localhost:5100 and localhost:5173), then try again.'
+    return `The action failed on the server (error ${status ?? 'unknown'}). Refresh the page and try again.`
+  }
 
   const fetchBiz = () => {
     setLoading(true)
@@ -195,13 +238,37 @@ function BizSec() {
 
   const toggleStatus = async (b: AdminBusinessListItem) => {
     // API expects a raw JSON boolean here
-    await api.put(`/admin/businesses/${b.id}/status`, b.isActive ? false : true)
-    fetchBiz()
+    try {
+      await api.put(`/admin/businesses/${b.id}/status`, b.isActive ? false : true, { headers: { 'Content-Type': 'application/json' } })
+      fetchBiz()
+      flash('ok', b.isActive ? `"${b.name}" deactivated (hidden from website).` : `"${b.name}" activated.`)
+    } catch (e) { flash('err', errMsg(e)) }
+  }
+
+  const approve = async (b: AdminBusinessListItem) => {
+    // Approve = activate + publish so it appears on the public website.
+    try {
+      await api.put(`/admin/businesses/${b.id}/approve`, true, { headers: { 'Content-Type': 'application/json' } })
+      fetchBiz()
+      flash('ok', `Approved "${b.name}" — it is now shown on the website.`)
+    } catch (e) { flash('err', errMsg(e)) }
+  }
+
+  const reject = async (b: AdminBusinessListItem) => {
+    // Reject = keep deactivated + unpublished so it stays hidden from the website.
+    try {
+      await api.put(`/admin/businesses/${b.id}/status`, false, { headers: { 'Content-Type': 'application/json' } })
+      fetchBiz()
+      flash('ok', `Rejected "${b.name}" — it stays hidden from the website.`)
+    } catch (e) { flash('err', errMsg(e)) }
   }
 
   const togglePublish = async (b: AdminBusinessListItem) => {
-    await api.put(`/businesses/${b.id}/publish`, { isPublished: !b.isPublished })
-    fetchBiz()
+    try {
+      await api.put(`/businesses/${b.id}/publish`, { isPublished: !b.isPublished })
+      fetchBiz()
+      flash('ok', `"${b.name}" ${b.isPublished ? 'unpublished' : 'published'}.`)
+    } catch (e) { flash('err', errMsg(e)) }
   }
 
   return (
@@ -210,6 +277,7 @@ function BizSec() {
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name, city or owner email…" className={`${input} flex-1 min-w-[220px]`} />
         <select value={status} onChange={e => setStatus(e.target.value)} className={input}>
           <option value="">All statuses</option>
+          <option value="pending">Pending approval</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive / expired</option>
           <option value="expiring">Expiring ≤30d</option>
@@ -217,6 +285,11 @@ function BizSec() {
           <option value="draft">Drafts (unpublished)</option>
         </select>
       </div>
+      {notice && (
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium ${notice.type === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          {notice.msg}
+        </div>
+      )}
       {loading ? <p className="text-sm text-gray-500">Loading businesses...</p> : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -225,10 +298,14 @@ function BizSec() {
               {businesses.map(b => {
                 const expired = b.subscriptionExpiresOn ? new Date(b.subscriptionExpiresOn) < new Date() : false
                 return (
-                  <tr key={b.id}>
+                  <tr key={b.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="px-4 py-3">
-                      <span className="font-medium text-gray-900">{b.name}</span>
-                      {!b.isPublished && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Draft</span>}
+                      <Link to={`/admin/business/${b.id}`} className="font-medium text-gray-900 hover:text-primary-700 hover:underline transition-colors">
+                        {b.name}
+                      </Link>
+                      {!b.isActive && !b.isPublished && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">Pending</span>}
+                      {b.isActive && b.isPublished && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600">Approved</span>}
+                      {b.isActive && !b.isPublished && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Draft</span>}
                     </td>
                     <td className="px-4 py-3">{b.categoryName}</td>
                     <td className="px-4 py-3 text-xs">{b.ownerEmail}</td>
@@ -239,13 +316,133 @@ function BizSec() {
                     </td>
                     <td className="px-4 py-3"><span className={b.isActive && !expired ? 'text-green-600' : 'text-red-500'}>{expired ? 'Expired' : b.isActive ? 'Active' : 'Disabled'}</span></td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <button onClick={() => toggleStatus(b)} className="text-sm font-medium text-primary-600 hover:text-primary-700 mr-3">{b.isActive ? 'Deactivate' : 'Activate'}</button>
-                      <button onClick={() => togglePublish(b)} className="text-sm font-medium text-gray-500 hover:text-gray-700">{b.isPublished ? 'Unpublish' : 'Publish'}</button>
+                      {!b.isActive && !b.isPublished ? (
+                        <>
+                          <button onClick={() => approve(b)} className="text-sm font-semibold text-green-600 hover:text-green-700 mr-3">✓ Approve</button>
+                          <button onClick={() => reject(b)} className="text-sm font-medium text-red-500 hover:text-red-600">Reject</button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => toggleStatus(b)} className="text-sm font-medium text-primary-600 hover:text-primary-700 mr-3">{b.isActive ? 'Deactivate' : 'Activate'}</button>
+                          <button onClick={() => togglePublish(b)} className="text-sm font-medium text-gray-500 hover:text-gray-700">{b.isPublished ? 'Unpublish' : 'Publish'}</button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 )
               })}
               {businesses.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-sm text-gray-400 text-center">No businesses match.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ---------------- Products ---------------- */
+
+function ProdSec() {
+  const [products, setProducts] = useState<AdminProductListItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [status, setStatus] = useState('pending')
+  const [q, setQ] = useState('')
+  const [notice, setNotice] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
+
+  const flash = (type: 'ok' | 'err', msg: string) => {
+    setNotice({ type, msg })
+    setTimeout(() => setNotice(null), 5000)
+  }
+
+  const errMsg = (e: unknown) => {
+    const err = e as { response?: { status?: number }; request?: unknown }
+    const s = err.response?.status
+    if (s === 401) return 'Your login has expired. Log back in as admin and try again.'
+    if (s === 403) return 'Only an admin can approve products. Log in with the admin account.'
+    if (s === 404) return 'This product is no longer pending. The list has been refreshed.'
+    if (!err.response && err.request) return 'Cannot reach the server. Make sure the app is running, then try again.'
+    return `The action failed on the server (error ${s ?? 'unknown'}). Refresh the page and try again.`
+  }
+
+  const fetchProducts = () => {
+    setLoading(true)
+    const p = new URLSearchParams()
+    if (status) p.set('status', status)
+    if (q) p.set('q', q)
+    api.get(`/admin/products?${p}`).then(r => setProducts(r.data)).finally(() => setLoading(false))
+  }
+  useEffect(() => { fetchProducts() }, [status])
+
+  const approve = async (p: AdminProductListItem) => {
+    try {
+      await api.put(`/admin/products/${p.id}/approve`, true, { headers: { 'Content-Type': 'application/json' } })
+      fetchProducts()
+      flash('ok', `Approved "${p.name}" — it is now shown on the website.`)
+    } catch (e) { flash('err', errMsg(e)) }
+  }
+
+  const reject = async (p: AdminProductListItem) => {
+    try {
+      await api.put(`/admin/products/${p.id}/approve`, false, { headers: { 'Content-Type': 'application/json' } })
+      fetchProducts()
+      flash('ok', `Rejected "${p.name}" — it stays hidden from the website.`)
+    } catch (e) { flash('err', errMsg(e)) }
+  }
+
+  const visible = products.filter(p => !q || p.name.toLowerCase().includes(q.toLowerCase()) || p.businessName.toLowerCase().includes(q.toLowerCase()))
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-3 mb-4">
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search product or business…" className={`${input} flex-1 min-w-[220px]`} />
+        <select value={status} onChange={e => setStatus(e.target.value)} className={input}>
+          <option value="">All products</option>
+          <option value="pending">Pending approval</option>
+          <option value="approved">Approved</option>
+        </select>
+      </div>
+      {notice && (
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium ${notice.type === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          {notice.msg}
+        </div>
+      )}
+      <div className="mb-3 text-sm text-gray-600">
+        {status === 'pending' && <span className="text-amber-700 font-medium">{visible.length} product{visible.length === 1 ? '' : 's'} waiting for approval — hidden from the website until you approve.</span>}
+      </div>
+      {loading ? <p className="text-sm text-gray-500">Loading products...</p> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-600"><tr><th className="px-4 py-3 font-medium">Product</th><th className="px-4 py-3 font-medium">Business</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3 font-medium">Price</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Actions</th></tr></thead>
+            <tbody className="divide-y divide-gray-200">
+              {visible.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No products found.</td></tr>}
+              {visible.map(p => (
+                <tr key={p.id}>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {p.imageUrl ? <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" /> : <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">img</div>}
+                      <span className="font-medium text-gray-900">{p.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">{p.businessName}</td>
+                  <td className="px-4 py-3 text-xs">{p.ownerEmail}</td>
+                  <td className="px-4 py-3">{p.price != null ? `₹${p.price}` : '—'}</td>
+                  <td className="px-4 py-3">
+                    {p.isApproved
+                      ? <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600">Approved</span>
+                      : <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">Pending</span>}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {p.isApproved ? (
+                      <button onClick={() => reject(p)} className="text-sm font-medium text-red-500 hover:text-red-600">Reject</button>
+                    ) : (
+                      <>
+                        <button onClick={() => approve(p)} className="text-sm font-semibold text-green-600 hover:text-green-700 mr-3">✓ Approve</button>
+                        <button onClick={() => reject(p)} className="text-sm font-medium text-red-500 hover:text-red-600">Reject</button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -434,21 +631,30 @@ function SubSec() {
 /* ---------------- Moderation ---------------- */
 
 interface TestimonialRow { id: number; businessName: string; customerName: string; rating: number; reviewText: string | null; isApproved: boolean }
+interface ProductReviewRow { id: number; productName: string; businessName: string; customerName: string; rating: number; reviewText: string | null; isApproved: boolean }
 
 function ModSec() {
   const [testimonials, setTestimonials] = useState<TestimonialRow[]>([])
+  const [prodReviews, setProdReviews] = useState<ProductReviewRow[]>([])
   const [loading, setLoading] = useState(true)
   const [pendingOnly, setPendingOnly] = useState(true)
 
   const fetchData = () => {
     setLoading(true)
-    api.get(`/admin/testimonials${pendingOnly ? '?pendingOnly=true' : ''}`).then(r => setTestimonials(r.data)).finally(() => setLoading(false))
+    Promise.all([
+      api.get(`/admin/testimonials${pendingOnly ? '?pendingOnly=true' : ''}`).then(r => setTestimonials(r.data)),
+      api.get(`/admin/product-reviews${pendingOnly ? '?pendingOnly=true' : ''}`).then(r => setProdReviews(r.data)),
+    ]).finally(() => setLoading(false))
   }
   useEffect(() => { fetchData() }, [pendingOnly])
 
   const toggleApprove = async (t: TestimonialRow) => {
-    // API expects a raw JSON boolean here
-    await api.put(`/admin/testimonials/${t.id}/approve`, t.isApproved ? false : true)
+    await api.put(`/admin/testimonials/${t.id}/approve`, t.isApproved ? false : true, { headers: { 'Content-Type': 'application/json' } })
+    fetchData()
+  }
+
+  const toggleProductApprove = async (r: ProductReviewRow) => {
+    await api.put(`/admin/product-reviews/${r.id}/approve`, r.isApproved ? false : true, { headers: { 'Content-Type': 'application/json' } })
     fetchData()
   }
 
@@ -458,34 +664,68 @@ function ModSec() {
     fetchData()
   }
 
+  const removeProduct = async (id: number) => {
+    if (!confirm('Delete this product review?')) return
+    await api.delete(`/admin/product-reviews/${id}`)
+    fetchData()
+  }
+
   if (loading) return <p className="text-sm text-gray-500">Loading reviews...</p>
 
   return (
-    <div>
-      <label className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-        <input type="checkbox" checked={pendingOnly} onChange={e => setPendingOnly(e.target.checked)} />
-        Show only pending
-      </label>
-      <div className="space-y-4">
-        {testimonials.length === 0 && <p className="text-sm text-gray-500">Nothing to review.</p>}
-        {testimonials.map(t => (
-          <div key={t.id} className="bg-white rounded-2xl border border-gray-200 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">{t.customerName}</p>
-                <p className="text-xs text-gray-500">{t.businessName} · <span className="text-amber-500">{'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}</span></p>
-                {t.reviewText && <p className="text-sm text-gray-700 mt-2">{t.reviewText}</p>}
+    <div className="space-y-10">
+      <div>
+        <label className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <input type="checkbox" checked={pendingOnly} onChange={e => setPendingOnly(e.target.checked)} />
+          Show only pending
+        </label>
+        <h3 className="text-sm font-bold text-gray-900 mb-3">Business reviews ({testimonials.length})</h3>
+        <div className="space-y-4">
+          {testimonials.length === 0 && <p className="text-sm text-gray-500">Nothing to review.</p>}
+          {testimonials.map(t => (
+            <div key={t.id} className="bg-white rounded-2xl border border-gray-200 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{t.customerName}</p>
+                  <p className="text-xs text-gray-500">{t.businessName} · <span className="text-amber-500">{'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}</span></p>
+                  {t.reviewText && <p className="text-sm text-gray-700 mt-2">{t.reviewText}</p>}
+                </div>
+                <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${t.isApproved ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>
+                  {t.isApproved ? 'Approved' : 'Pending'}
+                </span>
               </div>
-              <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${t.isApproved ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>
-                {t.isApproved ? 'Approved' : 'Pending'}
-              </span>
+              <div className="flex gap-3 mt-3">
+                <button onClick={() => toggleApprove(t)} className="text-sm font-medium text-primary-600 hover:text-primary-700">{t.isApproved ? 'Revoke approval' : 'Approve'}</button>
+                <button onClick={() => remove(t.id)} className="text-sm font-medium text-red-500 hover:text-red-600">Delete</button>
+              </div>
             </div>
-            <div className="flex gap-3 mt-3">
-              <button onClick={() => toggleApprove(t)} className="text-sm font-medium text-primary-600 hover:text-primary-700">{t.isApproved ? 'Revoke approval' : 'Approve'}</button>
-              <button onClick={() => remove(t.id)} className="text-sm font-medium text-red-500 hover:text-red-600">Delete</button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-bold text-gray-900 mb-3">Product reviews ({prodReviews.length})</h3>
+        <div className="space-y-4">
+          {prodReviews.length === 0 && <p className="text-sm text-gray-500">Nothing to review.</p>}
+          {prodReviews.map(r => (
+            <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{r.customerName} <span className="text-xs font-normal text-gray-400">on {r.productName}</span></p>
+                  <p className="text-xs text-gray-500">{r.businessName} · <span className="text-amber-500">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span></p>
+                  {r.reviewText && <p className="text-sm text-gray-700 mt-2">{r.reviewText}</p>}
+                </div>
+                <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${r.isApproved ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>
+                  {r.isApproved ? 'Approved' : 'Pending'}
+                </span>
+              </div>
+              <div className="flex gap-3 mt-3">
+                <button onClick={() => toggleProductApprove(r)} className="text-sm font-medium text-primary-600 hover:text-primary-700">{r.isApproved ? 'Revoke approval' : 'Approve'}</button>
+                <button onClick={() => removeProduct(r.id)} className="text-sm font-medium text-red-500 hover:text-red-600">Delete</button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -616,6 +856,7 @@ export default function AdminDashboard() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'overview', label: 'Overview' },
     { key: 'businesses', label: 'Businesses' },
+    { key: 'products', label: 'Products' },
     { key: 'subscriptions', label: 'Subscriptions' },
     { key: 'categories', label: 'Categories' },
     { key: 'users', label: 'Users' },
@@ -636,9 +877,10 @@ export default function AdminDashboard() {
         ))}
       </div>
       <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-        {tab === 'overview' && <Overview />}
+        {tab === 'overview' && <Overview onReview={() => setTab('businesses')} onReviewProducts={() => setTab('products')} />}
         {tab === 'users' && <UsersSec />}
         {tab === 'businesses' && <BizSec />}
+        {tab === 'products' && <ProdSec />}
         {tab === 'categories' && <CategoriesSec />}
         {tab === 'subscriptions' && <SubSec />}
         {tab === 'moderation' && <ModSec />}

@@ -1,6 +1,7 @@
 using BusinessPortal.API.Data;
 using BusinessPortal.API.DTOs;
 using BusinessPortal.API.Models;
+using BusinessPortal.API.Plans;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,14 +15,6 @@ public class SubscriptionsController : ControllerBase
 {
     private readonly AppDbContext _db;
 
-    // Static MVP plan catalogue (doc: "Simple, transparent subscription information").
-    private static readonly List<PlanDto> Plans = new()
-    {
-        new("Quarterly", 3, 1500m, "For small businesses getting started"),
-        new("Half-Yearly", 6, 2800m, "Save 7% - most popular for growing businesses"),
-        new("Annual", 12, 5000m, "Save 17% - best value for established businesses")
-    };
-
     public SubscriptionsController(AppDbContext db)
     {
         _db = db;
@@ -29,7 +22,7 @@ public class SubscriptionsController : ControllerBase
 
     [HttpGet("plans")]
     [AllowAnonymous]
-    public IActionResult GetPlans() => Ok(Plans);
+    public IActionResult GetPlans() => Ok(SubscriptionPlans.All);
 
     // Owner self-service renewal: Select Plan -> (payment placeholder) -> Pending
     // -> Admin activates on payment receipt.
@@ -44,7 +37,7 @@ public class SubscriptionsController : ControllerBase
         if (business is null)
             return NotFound(new { message = "Business not found." });
 
-        var plan = Plans.FirstOrDefault(p => p.Name.Equals(request.PlanName, StringComparison.OrdinalIgnoreCase));
+        var plan = SubscriptionPlans.Find(request.PlanName);
         if (plan is null)
             return BadRequest(new { message = "Unknown subscription plan." });
 
@@ -89,6 +82,43 @@ public class SubscriptionsController : ControllerBase
             .ToListAsync();
         return Ok(subscriptions);
     }
+
+    internal static async Task<SubscriptionUsageDto> ComputeUsage(AppDbContext db, int businessId)
+    {
+        var now = DateTime.UtcNow;
+        var subscriptions = await db.Subscriptions
+            .Where(s => s.BusinessId == businessId && s.PaymentStatus == SubscriptionStatus.Paid)
+            .ToListAsync();
+        var active = subscriptions
+            .Where(s => s.EndDate >= now)
+            .OrderByDescending(s => s.EndDate)
+            .FirstOrDefault();
+
+        var plan = active is not null ? SubscriptionPlans.Find(active.PlanName) : null;
+        var count = await db.Products.CountAsync(p => p.BusinessId == businessId && p.IsActive);
+
+        var remaining = plan?.ProductLimit is int limit ? Math.Max(limit - count, 0) : (int?)null;
+        return new SubscriptionUsageDto(plan?.Name, plan?.ProductLimit, count, remaining);
+    }
+
+    // How many of the plan's allowed products this business is currently using.
+    [HttpGet("usage")]
+    [Authorize(Roles = "BusinessOwner,Admin")]
+    public async Task<IActionResult> GetUsage([FromQuery] int businessId)
+    {
+        if (!await IsOwnBusiness(businessId))
+            return Forbid();
+        return Ok(await ComputeUsage(_db, businessId));
+    }
+
+    private async Task<bool> IsOwnBusiness(int businessId)
+    {
+        if (User.IsInRole("Admin")) return true;
+        var business = await _db.Businesses.FindAsync(businessId);
+        return business is not null && business.OwnerUserId == GetUserId();
+    }
+
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpGet]
     [Authorize(Roles = "Admin")]

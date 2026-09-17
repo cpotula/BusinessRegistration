@@ -14,9 +14,14 @@ public class AppDbContext : DbContext
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<ProductVideo> ProductVideos => Set<ProductVideo>();
     public DbSet<Testimonial> Testimonials => Set<Testimonial>();
+
+    public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<Enquiry> Enquiries => Set<Enquiry>();
     public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -80,5 +85,24 @@ public class AppDbContext : DbContext
             .HasForeignKey(e => e.BusinessId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Order>()
+            .HasIndex(o => o.OrderNumber)
+            .IsUnique();
+
+        modelBuilder.Entity<Order>()
+            .HasIndex(o => o.CreatedAt);
+
+        modelBuilder.Entity<OrderItem>()
+            .HasOne(i => i.Order)
+            .WithMany(o => o.Items)
+            .HasForeignKey(i => i.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => n.UserId);
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => n.CreatedAt);
     }
 }

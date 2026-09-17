@@ -15,6 +15,18 @@ public class User
     [MaxLength(20)]
     public string? Phone { get; set; }
 
+    [MaxLength(300)]
+    public string? Address { get; set; }
+
+    [MaxLength(100)]
+    public string? City { get; set; }
+
+    [MaxLength(100)]
+    public string? State { get; set; }
+
+    [MaxLength(10)]
+    public string? Pincode { get; set; }
+
     [Required]
     public string PasswordHash { get; set; } = string.Empty;
 
@@ -29,5 +41,6 @@ public enum UserRole
 {
     Guest = 0,
     BusinessOwner = 1,
-    Admin = 2
+    Admin = 2,
+    Customer = 3
 }
