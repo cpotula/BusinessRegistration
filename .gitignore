@@ -47,3 +47,7 @@ Uploads/
 Thumbs.db
 .DS_Store
 tsconfig.tsbuildinfo
+
+# Local run helpers / runtime logs
+API/restart-log.txt
+
