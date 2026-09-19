@@ -1,27 +1,25 @@
 import { useEffect, useState, FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { api } from '../api/client'
-import { ProductSearchItem } from '../api/types'
+import { MatchResult, getCatalog, searchProducts, pctBadgeClass } from '../utils/productSearch'
 import ProductCard from '../components/ProductCard'
 
-// Search results page - lists every matching product/service; each result
-// links to its product details page.
+// Search results page - lists every matching product/service, ranked by the
+// client-side fuzzy matcher (same engine as the header/customer search). Each
+// result links to its product details page.
 export default function ProductSearch() {
   const [params] = useSearchParams()
   const q = params.get('q') ?? ''
   const [term, setTerm] = useState(q)
-  const [items, setItems] = useState<ProductSearchItem[]>([])
-  const [total, setTotal] = useState(0)
+  const [items, setItems] = useState<MatchResult[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
     setTerm(q)
     setLoading(true)
-    api
-      .get(`/products/search?page=1&pageSize=50${q ? `&q=${encodeURIComponent(q)}` : ''}`)
-      .then(({ data }) => { setItems(data.items || []); setTotal(data.total) })
-      .catch(() => { setItems([]); setTotal(0) })
+    getCatalog()
+      .then((products) => setItems(searchProducts(products, q)))
+      .catch(() => setItems([]))
       .finally(() => setLoading(false))
   }, [q])
 
@@ -36,7 +34,7 @@ export default function ProductSearch() {
         <h1 className="text-3xl font-bold text-gray-900">
           {q ? <>Search results for &ldquo;{q}&rdquo;</> : 'All Products & Services'}
         </h1>
-        {!loading && <p className="text-gray-500 mt-1">{total} result{total === 1 ? '' : 's'} found</p>}
+        {!loading && <p className="text-gray-500 mt-1">{items.length} result{items.length === 1 ? '' : 's'} found</p>}
       </div>
 
       {/* Refine search */}
@@ -69,16 +67,22 @@ export default function ProductSearch() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-          {items.map((p) => (
-            <ProductCard
-              key={p.id}
-              to={`/products/${p.id}`}
-              name={p.name}
-              price={p.price}
-              imageUrl={p.imageUrl}
-              stockQuantity={p.stockQuantity}
-              subtitle={p.businessName}
-            />
+          {items.map(({ product: p, pct }) => (
+            <div key={p.id} className="relative">
+              {q && pct < 100 && (
+                <span className={`absolute top-2 right-2 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold border shadow-sm ${pctBadgeClass(pct)}`}>
+                  {pct}% match
+                </span>
+              )}
+              <ProductCard
+                to={`/products/${p.id}`}
+                name={p.name}
+                price={p.price}
+                imageUrl={p.imageUrl}
+                stockQuantity={p.stockQuantity}
+                subtitle={p.businessName}
+              />
+            </div>
           ))}
         </div>
       )}

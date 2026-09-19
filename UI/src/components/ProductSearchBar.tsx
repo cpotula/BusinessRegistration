@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api/client'
-import { ProductSearchItem } from '../api/types'
+import { MatchResult, getCatalog, searchProducts, pctBadgeClass } from '../utils/productSearch'
 
 interface Props {
   placeholder?: string
@@ -9,12 +8,12 @@ interface Props {
   onNavigate?: () => void
 }
 
-// Product search box with live autocomplete from the synonym-aware
-// /products/search endpoint. Typing "burger" or "bugger" shows burgers,
-// "maggam"/"blouse" shows the Maggam blouses, etc.
+// Product search box with live fuzzy autocomplete over the full catalog.
+// Typing "burger"/"bugger", "solid drive" (-> SSD) or a misspelling like
+// "bryani" (-> Biryani) surfaces the matching products with a match %.
 export default function ProductSearchBar({ placeholder = 'Search products...', size = 'md', onNavigate }: Props) {
   const [query, setQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<ProductSearchItem[]>([])
+  const [suggestions, setSuggestions] = useState<MatchResult[]>([])
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const navigateFn = useNavigate()
@@ -24,14 +23,11 @@ export default function ProductSearchBar({ placeholder = 'Search products...', s
     const term = query.trim()
     if (!term) { setSuggestions([]); return }
     const t = setTimeout(() => {
-      api
-        .get(`/products/search?page=1&pageSize=8&q=${encodeURIComponent(term)}`)
-        .then(({ data }) => {
-          setSuggestions(data.items || [])
-          setActiveIndex(-1)
-        })
-        .catch(() => setSuggestions([]))
-    }, 250)
+      getCatalog().then((products) => {
+        setSuggestions(searchProducts(products, term).slice(0, 8))
+        setActiveIndex(-1)
+      })
+    }, 200)
     return () => clearTimeout(t)
   }, [query])
 
@@ -86,7 +82,7 @@ export default function ProductSearchBar({ placeholder = 'Search products...', s
     } else if (e.key === 'Enter') {
       e.preventDefault()
       if (activeIndex >= 0 && activeIndex < suggestions.length) {
-        goProduct(suggestions[activeIndex].id)
+        goProduct(suggestions[activeIndex].product.id)
       } else if (activeIndex === suggestions.length) {
         runSearch(query)
       } else {
@@ -151,7 +147,7 @@ export default function ProductSearchBar({ placeholder = 'Search products...', s
         <div className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
           {isEmptyQuery ? (
             <div className="px-4 py-3 text-sm text-gray-400">
-              Start typing to search products — try &ldquo;burger&rdquo;, &ldquo;blouse&rdquo; or &ldquo;decor&rdquo;
+              Start typing to search products — try &ldquo;burger&rdquo;, &ldquo;solid drive&rdquo; or &ldquo;blouse&rdquo;
             </div>
           ) : suggestions.length === 0 ? (
             <div className="px-4 py-5 text-center">
@@ -166,7 +162,7 @@ export default function ProductSearchBar({ placeholder = 'Search products...', s
           ) : (
             <>
               <ul role="listbox" className="max-h-80 overflow-y-auto py-1">
-                {suggestions.map((p, idx) => (
+                {suggestions.map(({ product: p, pct }, idx) => (
                   <li
                     key={p.id}
                     role="option"
@@ -187,6 +183,11 @@ export default function ProductSearchBar({ placeholder = 'Search products...', s
                     <div className="min-w-0 flex-1">
                       <span className="block text-sm text-gray-800 font-medium truncate">{p.name}</span>
                     </div>
+                    {pct < 100 && (
+                      <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${pctBadgeClass(pct)}`}>
+                        {pct}%
+                      </span>
+                    )}
                   </li>
                 ))}
                 <li
