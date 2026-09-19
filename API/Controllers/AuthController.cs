@@ -73,5 +73,5 @@ public class AuthController : ControllerBase
     }
 
     private static AuthResponse ToResponse(User user, string token) =>
-        new(user.Id, user.Name, user.Email, user.Role.ToString(), token);
+        new(user.Id, user.Name, user.Email, user.Phone, user.Role.ToString(), token);
 }

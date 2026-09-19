@@ -5,7 +5,7 @@ namespace BusinessPortal.API.DTOs;
 public record RegisterRequest(
     [Required, MaxLength(100)] string Name,
     [Required, EmailAddress, MaxLength(150)] string Email,
-    [MaxLength(20)] string? Phone,
+    [Required, MaxLength(20)] string Phone,
     [Required, MinLength(6)] string Password,
     [MaxLength(20)] string? UserType = null,
     [MaxLength(300)] string? Address = null,
@@ -17,4 +17,4 @@ public record LoginRequest(
     [Required, EmailAddress] string Email,
     [Required] string Password);
 
-public record AuthResponse(int Id, string Name, string Email, string Role, string Token);
+public record AuthResponse(int Id, string Name, string Email, string? Phone, string Role, string Token);

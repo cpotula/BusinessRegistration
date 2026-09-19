@@ -78,7 +78,7 @@ export default function Register() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            <input placeholder="Phone number (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-field" />
+            <input required placeholder="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-field" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>

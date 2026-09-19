@@ -16,7 +16,7 @@ export default function CartPage() {
   const [placedNo, setPlacedNo] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [deliveryName, setDeliveryName] = useState(user?.name ?? '')
-  const [deliveryPhone, setDeliveryPhone] = useState('')
+  const [deliveryPhone, setDeliveryPhone] = useState(user?.phone ?? '')
   const [deliveryAddress, setDeliveryAddress] = useState('')
 
   const placeOrder = async () => {
