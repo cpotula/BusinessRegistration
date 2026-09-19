@@ -40,10 +40,19 @@ public class ProductsController : ControllerBase
             .Include(p => p.Videos)
             .Where(p => p.BusinessId == businessId && (manage || (p.IsActive && p.IsApproved)))
             .OrderByDescending(p => p.CreatedAt)
-            .Select(p => ToDto(p))
             .ToListAsync();
 
-        return Ok(products);
+        // Approved ratings so public product cards on the business page can
+        // show the review score and count, just like the home page cards.
+        var ratingGroups = await _db.ProductReviews
+            .Where(r => r.IsApproved && r.Product.BusinessId == businessId)
+            .GroupBy(r => r.ProductId)
+            .ToListAsync();
+        var avgById = ratingGroups.ToDictionary(g => g.Key, g => Math.Round(g.Average(x => x.Rating), 1));
+        var countById = ratingGroups.ToDictionary(g => g.Key, g => g.Count());
+
+        return Ok(products
+            .Select(p => ToDto(p, avgById.GetValueOrDefault(p.Id), countById.GetValueOrDefault(p.Id))));
     }
 
     // Public product search across all published, active businesses.
@@ -462,8 +471,9 @@ public class ProductsController : ControllerBase
         return business.OwnerUserId == GetUserId();
     }
 
-    private static ProductDto ToDto(Product p) => new(
+    private static ProductDto ToDto(Product p, double averageRating = 0, int reviewCount = 0) => new(
         p.Id, p.Name, p.Description, p.Price, p.IsActive, p.IsApproved, p.StockQuantity,
         p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url),
-        p.Videos.OrderBy(v => v.SortOrder).Select(v => new ProductVideoDto(v.Id, v.Url, v.Title)));
+        p.Videos.OrderBy(v => v.SortOrder).Select(v => new ProductVideoDto(v.Id, v.Url, v.Title)),
+        averageRating, reviewCount);
 }

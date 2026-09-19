@@ -26,7 +26,7 @@ export default function ProductCard({
   const out = (stockQuantity ?? 1) <= 0
   const [imgFailed, setImgFailed] = useState(false)
   const showImage = !!imageUrl && !imgFailed
-  const showRating = (rating ?? 0) > 0 && (reviewCount ?? 0) > 0
+  const hasReviews = (reviewCount ?? 0) > 0 && (rating ?? 0) > 0
 
   return (
     <Link
@@ -54,13 +54,15 @@ export default function ProductCard({
           {name}
         </h3>
         {subtitle && <p className="text-xs text-gray-400 truncate mt-1">{subtitle}</p>}
-        {showRating && (
+        {hasReviews ? (
           <p className="flex items-center gap-1 text-xs mt-1.5">
             <span className="text-amber-500 text-[13px] leading-none">{'★'.repeat(Math.max(1, Math.min(5, Math.round(rating!))))}</span>
             <span className="text-amber-500 text-[13px] leading-none">{'☆'.repeat(5 - Math.round(rating!))}</span>
             <span className="font-bold text-gray-800 ml-0.5">{rating!.toFixed(1)}</span>
             <span className="text-gray-400">({reviewCount!} review{reviewCount === 1 ? '' : 's'})</span>
           </p>
+        ) : (
+          <p className="text-xs text-gray-400 mt-1.5">☆ Not yet rated</p>
         )}
         <div className="mt-2.5 flex items-center justify-between gap-2">
           {price != null ? (

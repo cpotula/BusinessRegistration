@@ -79,6 +79,8 @@ export interface Product {
   stockQuantity: number
   images: string[]
   videos: { id: number; url: string; title: string | null }[]
+  averageRating: number
+  reviewCount: number
 }
 
 export interface ProductSearchItem {

@@ -232,6 +232,8 @@ export default function BusinessDetailPage() {
                 price={p.price}
                 imageUrl={p.images[0] ?? null}
                 stockQuantity={p.stockQuantity}
+                rating={p.averageRating}
+                reviewCount={p.reviewCount}
               />
             ))}
           </div>

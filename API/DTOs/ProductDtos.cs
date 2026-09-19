@@ -26,7 +26,9 @@ public record ProductDto(
     bool IsApproved,
     int StockQuantity,
     IEnumerable<string> Images,
-    IEnumerable<ProductVideoDto> Videos);
+    IEnumerable<ProductVideoDto> Videos,
+    double AverageRating = 0,
+    int ReviewCount = 0);
 
 public record ProductVideoDto(int Id, string Url, string? Title);
 
