@@ -302,17 +302,21 @@ public class OrdersController : ControllerBase
             .ToListAsync();
 
         var currentMonth = new DateTime(now.Year, now.Month, 1);
-        var firstMonth = items.Count > 0
-            ? new DateTime(items.Min(i => i.Order!.CreatedAt.Year), items.Min(i => i.Order!.CreatedAt.Month), 1)
-            : currentMonth;
-
-        var monthly = new List<SoldPeriodPointDto>();
-        for (var cursor = firstMonth; cursor <= currentMonth; cursor = cursor.AddMonths(1))
-            monthly.Add(BuildPoint(cursor, cursor.AddMonths(1), items, cursor.ToString("MMM yyyy", CultureInfo.InvariantCulture)));
-
         static DateTime StartOfQuarter(DateTime d) => new DateTime(d.Year, ((d.Month - 1) / 3) * 3 + 1, 1);
 
-        var firstQuarter = items.Count > 0 ? StartOfQuarter(items.Min(i => i.Order!.CreatedAt)) : StartOfQuarter(now);
+        // Build the full calendar from a baseline year so every month (Jan–Dec),
+        // every quarter (Q1–Q4) and every year is selectable even when a period
+        // has no confirmed orders. Baseline = previous year, or the first year
+        // with orders if that is earlier.
+        var firstDataYear = items.Count > 0 ? items.Min(i => i.Order!.CreatedAt.Year) : now.Year;
+        var baselineYear = Math.Min(firstDataYear, now.Year - 1);
+        var baseline = new DateTime(baselineYear, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var monthly = new List<SoldPeriodPointDto>();
+        for (var cursor = baseline; cursor <= currentMonth; cursor = cursor.AddMonths(1))
+            monthly.Add(BuildPoint(cursor, cursor.AddMonths(1), items, cursor.ToString("MMM yyyy", CultureInfo.InvariantCulture)));
+
+        var firstQuarter = StartOfQuarter(baseline);
         var currentQuarter = StartOfQuarter(now);
 
         var quarterly = new List<SoldPeriodPointDto>();
@@ -322,13 +326,12 @@ public class OrdersController : ControllerBase
             quarterly.Add(BuildPoint(cursor, cursor.AddMonths(3), items, $"Q{q} {cursor.Year}"));
         }
 
-        var yearly = items
-            .Select(i => i.Order!.CreatedAt.Year)
-            .Concat(new[] { now.Year })
-            .Distinct()
-            .OrderBy(y => y)
-            .Select(y => BuildPoint(new DateTime(y, 1, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(y + 1, 1, 1, 0, 0, 0, DateTimeKind.Utc), items, y.ToString(CultureInfo.InvariantCulture)))
-            .ToList();
+        var yearly = new List<SoldPeriodPointDto>();
+        for (var y = baselineYear; y <= now.Year; y++)
+            yearly.Add(BuildPoint(
+                new DateTime(y, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(y + 1, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                items, y.ToString(CultureInfo.InvariantCulture)));
 
         return Ok(new SoldByPeriodDto(monthly, quarterly, yearly));
     }

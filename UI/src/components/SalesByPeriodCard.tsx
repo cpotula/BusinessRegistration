@@ -13,8 +13,9 @@ export default function SalesByPeriodCard({ data }: { data: SoldByPeriod | null 
 
   const points = data ? data[period] : []
   const allLabel = `All ${periodNoun(period)}s`
+  const latestPoint = points.length > 0 ? points[points.length - 1].key : ''
 
-  useEffect(() => { setSelected('') }, [period])
+  useEffect(() => { setSelected(latestPoint) }, [period, latestPoint])
 
   const isSpecific = selected.length > 0
   const visible = isSpecific ? points.filter((p) => p.key === selected) : points
