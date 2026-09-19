@@ -281,7 +281,7 @@ export default function ProductDetailPage() {
           ) : (
             reviewSent ? (
               <div className="text-center py-6 mb-4 border border-dashed border-green-200 rounded-xl">
-                <p className="text-green-700 font-medium">Thank you! Your review will appear after approval.</p>
+                <p className="text-green-700 font-medium">Thank you for your review! It's now visible with the product ratings.</p>
               </div>
             ) : (
               <form onSubmit={submitReview} className="space-y-3 mb-5">

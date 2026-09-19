@@ -45,7 +45,7 @@ export default function MyOrders() {
     setSubmitting(true); setReviewMsg(''); setReviewError('')
     try {
       await api.post(`/products/${reviewTarget.productId}/reviews`, { rating, reviewText })
-      setReviewMsg('Thank you! Your review will appear once approved.')
+      setReviewMsg('Thank you! Your review has been posted.')
       setReviewedIds((ids) => [...ids, reviewTarget.productId])
     } catch (err: any) {
       setReviewError(err.response?.data?.message ?? 'Failed to submit review. Please try again.')
@@ -207,7 +207,7 @@ export default function MyOrders() {
                 <button type="submit" disabled={submitting} className="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                   {submitting ? 'Submitting…' : 'Submit Review'}
                 </button>
-                <p className="text-xs text-gray-400 text-center">Your review appears on the product page after admin approval.</p>
+                <p className="text-xs text-gray-400 text-center">Your review is posted instantly on the product page — only verified buyers can review, so no approval is needed.</p>
               </form>
             )}
           </div>

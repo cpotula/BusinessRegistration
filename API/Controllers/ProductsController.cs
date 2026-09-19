@@ -224,9 +224,9 @@ public class ProductsController : ControllerBase
         if (alreadyReviewed)
             return BadRequest(new { message = "You have already reviewed this product." });
 
-        // Reviews are collected after delivery: a customer may review only the
-        // products that have actually been delivered to them. Admins may post
-        // reviews on any product.
+        // Only customers who had this product delivered can review it, so the
+        // review is trusted by construction and goes live immediately - no
+        // moderation approval step. Admins may delete it if ever inappropriate.
         var isDeliveredBuyer = User.IsInRole(nameof(UserRole.Admin)) ||
             await _db.Orders.AnyAsync(o => o.CustomerUserId == userId
                 && o.Status == "Delivered"
@@ -241,11 +241,11 @@ public class ProductsController : ControllerBase
             CustomerName = User.FindFirstValue(ClaimTypes.Name) ?? "Customer",
             Rating = request.Rating,
             ReviewText = request.ReviewText,
-            IsApproved = false
+            IsApproved = true
         };
         _db.ProductReviews.Add(review);
         await _db.SaveChangesAsync();
-        return Ok(new { message = "Thank you! Your review will appear once approved." });
+        return Ok(new { message = "Thank you! Your review has been posted." });
     }
 
     [HttpPost]

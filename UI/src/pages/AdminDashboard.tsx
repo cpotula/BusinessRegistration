@@ -643,18 +643,13 @@ function ModSec() {
     setLoading(true)
     Promise.all([
       api.get(`/admin/testimonials${pendingOnly ? '?pendingOnly=true' : ''}`).then(r => setTestimonials(r.data)),
-      api.get(`/admin/product-reviews${pendingOnly ? '?pendingOnly=true' : ''}`).then(r => setProdReviews(r.data)),
+      api.get('/admin/product-reviews').then(r => setProdReviews(r.data)),
     ]).finally(() => setLoading(false))
   }
   useEffect(() => { fetchData() }, [pendingOnly])
 
   const toggleApprove = async (t: TestimonialRow) => {
     await api.put(`/admin/testimonials/${t.id}/approve`, t.isApproved ? false : true, { headers: { 'Content-Type': 'application/json' } })
-    fetchData()
-  }
-
-  const toggleProductApprove = async (r: ProductReviewRow) => {
-    await api.put(`/admin/product-reviews/${r.id}/approve`, r.isApproved ? false : true, { headers: { 'Content-Type': 'application/json' } })
     fetchData()
   }
 
@@ -705,6 +700,7 @@ function ModSec() {
 
       <div>
         <h3 className="text-sm font-bold text-gray-900 mb-3">Product reviews ({prodReviews.length})</h3>
+        <p className="text-xs text-gray-400 mb-3">Reviews from verified buyers post automatically and can only be removed if inappropriate.</p>
         <div className="space-y-4">
           {prodReviews.length === 0 && <p className="text-sm text-gray-500">Nothing to review.</p>}
           {prodReviews.map(r => (
@@ -715,12 +711,9 @@ function ModSec() {
                   <p className="text-xs text-gray-500">{r.businessName} · <span className="text-amber-500">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span></p>
                   {r.reviewText && <p className="text-sm text-gray-700 mt-2">{r.reviewText}</p>}
                 </div>
-                <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${r.isApproved ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>
-                  {r.isApproved ? 'Approved' : 'Pending'}
-                </span>
+                <span className="text-xs font-medium px-2 py-1 rounded-full shrink-0 bg-green-50 text-green-600">Posted</span>
               </div>
               <div className="flex gap-3 mt-3">
-                <button onClick={() => toggleProductApprove(r)} className="text-sm font-medium text-primary-600 hover:text-primary-700">{r.isApproved ? 'Revoke approval' : 'Approve'}</button>
                 <button onClick={() => removeProduct(r.id)} className="text-sm font-medium text-red-500 hover:text-red-600">Delete</button>
               </div>
             </div>
