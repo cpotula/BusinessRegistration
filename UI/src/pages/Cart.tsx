@@ -22,7 +22,7 @@ export default function CartPage() {
   const placeOrder = async () => {
     if (!user || items.length === 0) return
     if (!deliveryName.trim() || !deliveryPhone.trim() || !deliveryAddress.trim()) {
-      setError('Please enter the delivery name, phone and address.')
+      setError('Please enter your name, phone and delivery address.')
       return
     }
     setPlacing(true); setError('')
@@ -137,11 +137,11 @@ export default function CartPage() {
                 <p className="text-xs text-gray-500 mb-4">Where should the seller deliver your order?</p>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Name</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
                     <input required value={deliveryName} onChange={(e) => setDeliveryName(e.target.value)} placeholder="Full name" className="input-field" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Phone</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
                     <input required value={deliveryPhone} onChange={(e) => setDeliveryPhone(e.target.value)} placeholder="Phone number" className="input-field" />
                   </div>
                   <div>
