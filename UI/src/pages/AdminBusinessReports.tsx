@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
-import { StatCard, DonutChart, BarChart, BarSeries } from './OwnerDashboard'
+import { StatCard, DonutChart, BarChart } from './OwnerDashboard'
+import SalesByPeriodCard from '../components/SalesByPeriodCard'
 import {
   AdminBusinessListItem, OrderInfo, Product, SoldByPeriod, SoldSummary,
 } from '../api/types'
@@ -18,7 +19,6 @@ export default function AdminBusinessReports() {
   const [orders, setOrders] = useState<OrderInfo[]>([])
   const [sold, setSold] = useState<SoldSummary | null>(null)
   const [periodData, setPeriodData] = useState<SoldByPeriod | null>(null)
-  const [period, setPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly')
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
 
@@ -193,44 +193,7 @@ export default function AdminBusinessReports() {
             </div>
           </div>
 
-          <div className="card p-5 sm:p-6">
-            <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md shadow-primary-200/50">
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0L18 7.5M3 15l4.5-1.5M3 15l6 6M21 7.5l-4.5-2.25M21 7.5l-4.5 2.25M21 7.5V21M9 21h12m0 0v-3" /></svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Sales by period</h3>
-                  <p className="text-xs text-gray-400">Units sold from confirmed orders — by month, quarter and year</p>
-                </div>
-              </div>
-              <div className="flex gap-1 bg-slate-100 rounded-xl p-1 shadow-inner">
-                {(['monthly', 'quarterly', 'yearly'] as const).map(k => (
-                  <button key={k} onClick={() => setPeriod(k)} className={`px-4 py-1.5 rounded-lg text-sm font-semibold capitalize transition-all ${period === k ? 'bg-white shadow-md text-primary-700' : 'text-gray-500 hover:text-gray-700'}`}>{k}</button>
-                ))}
-              </div>
-            </div>
-            <BarSeries points={periodData ? periodData[period] : []} />
-            {periodData && periodData[period].length > 0 && (
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 text-white p-5">
-                  <p className="text-xs font-medium uppercase tracking-wide text-primary-100">Total {period} revenue</p>
-                  <p className="text-2xl font-extrabold mt-1 tracking-tight">₹{periodData[period].reduce((s, p) => s + p.revenue, 0).toLocaleString('en-IN')}</p>
-                  <p className="text-xs text-primary-200 mt-1">{periodData[period].reduce((s, p) => s + p.units, 0)} units sold</p>
-                </div>
-                {(() => {
-                  const best = [...periodData[period]].sort((a, b) => b.revenue - a.revenue)[0]
-                  return best && best.revenue > 0 ? (
-                    <div className="rounded-2xl bg-primary-50 border border-primary-100 p-5">
-                      <p className="text-xs font-medium uppercase tracking-wide text-primary-700">Best {period.replace('y', '')} period</p>
-                      <p className="text-2xl font-extrabold mt-1 tracking-tight text-primary-700">{best.key}</p>
-                      <p className="text-xs text-primary-600 mt-1">{best.units} units · ₹{best.revenue.toLocaleString('en-IN')} revenue</p>
-                    </div>
-                  ) : null
-                })()}
-              </div>
-            )}
-          </div>
+          <SalesByPeriodCard data={periodData} />
 
           <div className="card p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">

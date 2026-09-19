@@ -285,8 +285,9 @@ public class OrdersController : ControllerBase
         return Ok(summary);
     }
 
-    // Time-series of confirmed-order sales: last 12 months, last 4 quarters,
-    // and per year, for the owner's own business.
+    // Time-series of confirmed-order sales covering the entire recorded
+    // history (all months, all quarters, per year) so the UI can drill down
+    // into a specific month, quarter or year. For the owner's own business.
     [HttpGet("sold-by-period")]
     [Authorize(Roles = "BusinessOwner,Admin")]
     public async Task<IActionResult> GetSoldByPeriod([FromQuery] int businessId)
@@ -300,21 +301,25 @@ public class OrdersController : ControllerBase
             .Where(i => i.BusinessId == businessId && i.Order!.Status == "Confirmed")
             .ToListAsync();
 
+        var currentMonth = new DateTime(now.Year, now.Month, 1);
+        var firstMonth = items.Count > 0
+            ? new DateTime(items.Min(i => i.Order!.CreatedAt.Year), items.Min(i => i.Order!.CreatedAt.Month), 1)
+            : currentMonth;
+
         var monthly = new List<SoldPeriodPointDto>();
-        for (var i = 11; i >= 0; i--)
-        {
-            var start = new DateTime(now.Year, now.Month, 1).AddMonths(-i);
-            monthly.Add(BuildPoint(start, start.AddMonths(1), items, start.ToString("MMM yyyy", CultureInfo.InvariantCulture)));
-        }
+        for (var cursor = firstMonth; cursor <= currentMonth; cursor = cursor.AddMonths(1))
+            monthly.Add(BuildPoint(cursor, cursor.AddMonths(1), items, cursor.ToString("MMM yyyy", CultureInfo.InvariantCulture)));
+
+        static DateTime StartOfQuarter(DateTime d) => new DateTime(d.Year, ((d.Month - 1) / 3) * 3 + 1, 1);
+
+        var firstQuarter = items.Count > 0 ? StartOfQuarter(items.Min(i => i.Order!.CreatedAt)) : StartOfQuarter(now);
+        var currentQuarter = StartOfQuarter(now);
 
         var quarterly = new List<SoldPeriodPointDto>();
-        for (var i = 3; i >= 0; i--)
+        for (var cursor = firstQuarter; cursor <= currentQuarter; cursor = cursor.AddMonths(3))
         {
-            var quarterStart = new DateTime(now.Year, now.Month, 1).AddMonths(-now.Month % 3).AddMonths(-i * 3 + (now.Month - 1) % 3);
-            quarterStart = new DateTime(quarterStart.Year, quarterStart.Month, 1);
-            var quarterEnd = quarterStart.AddMonths(3);
-            var q = (quarterStart.Month - 1) / 3 + 1;
-            quarterly.Add(BuildPoint(quarterStart, quarterEnd, items, $"Q{q} {quarterStart.Year}"));
+            var q = (cursor.Month - 1) / 3 + 1;
+            quarterly.Add(BuildPoint(cursor, cursor.AddMonths(3), items, $"Q{q} {cursor.Year}"));
         }
 
         var yearly = items

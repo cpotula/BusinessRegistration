@@ -2,9 +2,10 @@ import { useEffect, useState, FormEvent, ChangeEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
-import { BusinessSummary, BusinessDetail, Category, Enquiry, Product, Subscription, Testimonial, Plan, OrderInfo, SoldSummary, SoldByPeriod, SoldPeriodPoint } from '../api/types'
+import { BusinessSummary, BusinessDetail, Category, Enquiry, Product, Subscription, Testimonial, Plan, OrderInfo, SoldSummary, SoldByPeriod } from '../api/types'
 import { subscriptionState, subscriptionBadge, daysUntil, fmtDate, completeness } from '../api/utils'
 import OrderStatusBar, { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, ORDER_STATUS_BADGE, OrderStatus } from '../components/OrderStatusBar'
+import SalesByPeriodCard from '../components/SalesByPeriodCard'
 
 type Tab = 'overview' | 'edit' | 'products' | 'inventory' | 'reports' | 'subscription' | 'reviews' | 'enquiries' | 'orders'
 
@@ -961,36 +962,6 @@ export function BarChart({ items }: { items: { label: string; value: number }[] 
   )
 }
 
-export function BarSeries({ points }: { points: SoldPeriodPoint[] }) {
-  const max = Math.max(...points.map((p) => p.units), 1)
-  if (points.length === 0) return (
-    <div className="py-12 text-center">
-      <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-      <p className="text-sm text-gray-500">No confirmed sales yet.</p>
-      <p className="text-xs text-gray-400 mt-1">Sales from confirmed orders will chart here</p>
-    </div>
-  )
-  return (
-    <div className="flex items-end gap-2 h-52 pt-2">
-      {points.map((p, i) => {
-        const isMax = p.units === max && max > 0
-        return (
-          <div key={i} className="group flex-1 flex flex-col items-center justify-end h-full min-w-0" title={`${p.key}: ${p.units} units · ₹${p.revenue.toLocaleString('en-IN')}`}>
-            <span className={`text-[11px] font-bold mb-1.5 ${isMax ? 'text-primary-700' : 'text-gray-500'} transition-colors`}>{p.units}</span>
-            <div
-              className={`w-full max-w-[44px] rounded-t-lg transition-all duration-300 group-hover:brightness-110 ${isMax ? 'bg-gradient-to-t from-primary-700 to-primary-500 shadow-sm' : 'bg-gradient-to-t from-primary-400/90 to-primary-300'}`}
-              style={{ height: `${Math.max((p.units / max) * 100, p.units > 0 ? 4 : 1)}%` }}
-            />
-            <span className={`text-[10px] mt-2 w-full text-center truncate ${isMax ? 'text-primary-700 font-semibold' : 'text-gray-400'}`}>{p.key}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 function ProductTable({ products, onChanged }: { products: Product[]; onChanged: () => void }) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editPrice, setEditPrice] = useState('')
@@ -1172,7 +1143,6 @@ function ReportsSec({ bizId }: { bizId: number }) {
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<OrderInfo[]>([])
   const [periodData, setPeriodData] = useState<SoldByPeriod | null>(null)
-  const [period, setPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly')
   const [loading, setLoading] = useState(true)
 
   const loadProducts = () => api.get(`/products?businessId=${bizId}`).then(({ data }) => setProducts(data))
@@ -1298,46 +1268,7 @@ function ReportsSec({ bizId }: { bizId: number }) {
         </div>
       </div>
 
-      <div className="card p-5 sm:p-6">
-        <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md shadow-primary-200/50">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0L18 7.5M3 15l4.5-1.5M3 15l6 6M21 7.5l-4.5-2.25M21 7.5l-4.5 2.25M21 7.5V21M9 21h12m0 0v-3" /></svg>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900">Sales by period</h3>
-              <p className="text-xs text-gray-400">Units sold from confirmed orders — by month, quarter and year</p>
-            </div>
-          </div>
-          <div className="flex gap-1 bg-slate-100 rounded-xl p-1 shadow-inner">
-            {(['monthly', 'quarterly', 'yearly'] as const).map((k) => (
-              <button key={k} onClick={() => setPeriod(k)} className={`px-4 py-1.5 rounded-lg text-sm font-semibold capitalize transition-all ${period === k ? 'bg-white shadow-md text-primary-700' : 'text-gray-500 hover:text-gray-700'}`}>
-                {k}
-              </button>
-            ))}
-          </div>
-        </div>
-        <BarSeries points={periodData ? periodData[period] : []} />
-        {periodData && periodData[period].length > 0 && (
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 text-white p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-primary-100">Total {period} revenue</p>
-              <p className="text-2xl font-extrabold mt-1 tracking-tight">₹{periodData[period].reduce((s, p) => s + p.revenue, 0).toLocaleString('en-IN')}</p>
-              <p className="text-xs text-primary-200 mt-1">{periodData[period].reduce((s, p) => s + p.units, 0)} units sold</p>
-            </div>
-            {(() => {
-              const best = [...periodData[period]].sort((a, b) => b.revenue - a.revenue)[0]
-              return best && best.revenue > 0 ? (
-                <div className="rounded-2xl bg-primary-50 border border-primary-100 p-5">
-                  <p className="text-xs font-medium uppercase tracking-wide text-primary-700">Best {period.replace('y', '')} period</p>
-                  <p className="text-2xl font-extrabold mt-1 tracking-tight text-primary-700">{best.key}</p>
-                  <p className="text-xs text-primary-600 mt-1">{best.units} units · ₹{best.revenue.toLocaleString('en-IN')} revenue</p>
-                </div>
-              ) : null
-            })()}
-          </div>
-        )}
-      </div>
+      <SalesByPeriodCard data={periodData} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card p-5 sm:p-6">
