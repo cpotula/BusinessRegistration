@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 // Flipkart / Amazon style product card: square image tile on a soft
@@ -19,6 +20,8 @@ export default function ProductCard({
   subtitle?: string | null
 }) {
   const out = (stockQuantity ?? 1) <= 0
+  const [imgFailed, setImgFailed] = useState(false)
+  const showImage = !!imageUrl && !imgFailed
 
   return (
     <Link
@@ -26,8 +29,8 @@ export default function ProductCard({
       className="group card overflow-hidden hover:-translate-y-0.5 transition-transform duration-300"
     >
       <div className="product-tile aspect-square flex items-center justify-center">
-        {imageUrl ? (
-          <img src={imageUrl} alt={name} loading="lazy" className="w-full h-full object-cover" />
+        {showImage ? (
+          <img src={imageUrl} alt={name} loading="lazy" onError={() => setImgFailed(true)} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <svg className="w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
