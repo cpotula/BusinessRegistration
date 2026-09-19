@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SixLabors.ImageSharp;
@@ -47,18 +48,60 @@ public class UploadController : ControllerBase
 
         try
         {
-            using var image = await Image.LoadAsync(file.OpenReadStream());
-            image.Mutate(x => x.AutoOrient());
-            if (image.Width > 1600)
-                image.Mutate(x => x.Resize(new ResizeOptions { Size = new Size(1600, 1600), Mode = ResizeMode.Max }));
-            await image.SaveAsync(fullPath);
+            using (var input = file.OpenReadStream())
+            using (var image = await Image.LoadAsync(input))
+            {
+                image.Mutate(x => x.AutoOrient());
+                if (image.Width > 1600)
+                    image.Mutate(x => x.Resize(new ResizeOptions { Size = new Size(1600, 1600), Mode = ResizeMode.Max }));
+                await image.SaveAsync(fullPath);
+            }
         }
         catch (UnknownImageFormatException)
         {
             return BadRequest(new { message = "The uploaded file is not a valid image." });
         }
 
+        // Deduplicate by content: if the same image bytes were uploaded
+        // before (under a different file name), return the existing URL
+        // instead of storing another copy.
+        using (var sha = SHA256.Create())
+        {
+            byte[] newHash;
+            using (var fs = System.IO.File.OpenRead(fullPath))
+                newHash = sha.ComputeHash(fs);
+            foreach (var existing in Directory.GetFiles(dir))
+            {
+                if (string.Equals(existing, fullPath, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                byte[] existingHash;
+                using (var stream = System.IO.File.OpenRead(existing))
+                    existingHash = sha.ComputeHash(stream);
+                if (existingHash.AsSpan().SequenceEqual(newHash))
+                {
+                    TryDelete(fullPath);
+                    return Ok(new { url = $"/uploads/{subDir}/{Path.GetFileName(existing)}" });
+                }
+            }
+        }
+
         return Ok(new { url = $"/uploads/{subDir}/{name}" });
+    }
+
+    private static void TryDelete(string path)
+    {
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                System.IO.File.Delete(path);
+                return;
+            }
+            catch (IOException)
+            {
+                Thread.Sleep(150);
+            }
+        }
     }
 
     [HttpPost("video")]

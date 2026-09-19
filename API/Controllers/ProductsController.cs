@@ -320,10 +320,13 @@ public class ProductsController : ControllerBase
         if (!IsAdmin() && product.Business!.OwnerUserId != GetUserId())
             return Forbid();
 
+        var existing = product.Images.Select(i => i.Url).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var order = product.Images.Count;
         foreach (var url in urls)
         {
             if (string.IsNullOrWhiteSpace(url))
+                continue;
+            if (!existing.Add(url))
                 continue;
             _db.ProductImages.Add(new ProductImage { ProductId = id, Url = url, SortOrder = order++ });
         }
