@@ -15,42 +15,79 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 
 const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
 
-// Ordered character overlap between a query word and a candidate word,
-// blended with a length-ratio penalty.
-function fuzzy(q: string, tok: string): number {
-  if (!tok) return 0
-  let m = 0, j = 0
-  for (const ch of q) {
-    const k = tok.indexOf(ch, j)
-    if (k !== -1) { m++; j = k + 1 }
+// Common product synonyms so a loosely-worded search (e.g. "solid drive",
+// "hard disk") still finds the matching product.
+const SYNONYM_TERMS: [string, string[]][] = [
+  ['solid state drive', ['ssd']],
+  ['solid state', ['ssd']],
+  ['solid drive', ['ssd']],
+  ['solid', ['ssd']],
+  ['hard disk', ['hdd']],
+  ['hard drive', ['hdd']],
+  ['hdd', ['harddrive', 'hard']],
+  ['ssd', ['solid', 'solidstate']],
+]
+
+function expandQuery(query: string): string[] {
+  const q = normalize(query)
+  const words: string[] = []
+  for (const [phrase, targets] of SYNONYM_TERMS) {
+    if (q.includes(phrase)) words.push(...targets)
   }
-  const denom = Math.max(q.length, tok.length) || 1
-  const lcs = m / denom
-  const lenRatio = 1 - Math.abs(q.length - tok.length) / denom
-  return 0.55 * lcs + 0.45 * lenRatio
+  return words
 }
 
-// How close a single search word is to some text: exact / prefix / substring
-// are near-perfect; otherwise the closest word in the text is compared fuzzily
-// so a mistyped or differently-spelled product name still surfaces.
+// Levenshtein edit distance between two short words.
+function editDistance(a: string, b: string): number {
+  const m = a.length, n = b.length
+  const d: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+  for (let i = 0; i <= m; i++) d[i][0] = i
+  for (let j = 0; j <= n; j++) d[0][j] = j
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      d[i][j] = Math.min(
+        d[i - 1][j] + 1,
+        d[i][j - 1] + 1,
+        d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      )
+  return d[m][n]
+}
+
+// Length-normalised edit-distance similarity (0..1). Only genuine
+// misspellings score high ("bryani" ~ "biryani"); unrelated words such as
+// "drive" vs "denim" are properly rejected instead of sharing scattered chars.
+function fuzzy(q: string, tok: string): number {
+  if (!tok) return 0
+  return 1 - editDistance(q, tok) / Math.max(q.length, tok.length)
+}
+
+// How close a single search word is to some text. Exact / prefix / substring
+// hits are strong (0.75+). Fuzzy matches are accepted only when the closest
+// word in the text is genuinely similar (>=0.6 similarity) AND the word is
+// long enough - so short words like "solid" never match unrelated words like
+// "spice", and "drive" never matches "denim".
 function wordToTextScore(q: string, t: string): number {
   if (!t) return 0
   const ql = q.length
   if (ql === 0) return 0
   if (t === q) return 1
   if (t.startsWith(q) && ql >= 2) return 0.9
-  if (t.includes(q)) return 0.75
+  if (t.includes(q) && ql >= 2) return 0.75
+  if (ql < 3) return 0
   const tokScores = t.split(' ').filter(Boolean).map((tok) => fuzzy(q, tok))
   const bestTok = Math.max(...tokScores, 0)
-  return Math.max(bestTok * 0.95, fuzzy(q, t) * 0.7)
+  if (bestTok < 0.6) return 0
+  return 0.4 + 0.6 * (bestTok - 0.6) / (1 - 0.6)
 }
 
 // Match percentage (0-100) of a product against the typed query. Name matches
-// count most, then the business name, then the description - so a partial or
-// loosely-typed product name still surfaces the product (~25% to ~100%).
+// count most, then the business name, then the description. Synonyms are
+// expanded first (e.g. "solid drive" -> "ssd"), and every typed word must
+// contribute a genuine match.
 function matchPercent(p: ProductSearchItem, query: string): number {
-  const words = normalize(query).split(' ').filter(Boolean)
-  if (words.length === 0) return 0
+  const typed = normalize(query).split(' ').filter(Boolean)
+  if (typed.length === 0) return 0
+  const words = [...new Set([...typed, ...expandQuery(query)])]
   const nameText = normalize(p.name)
   const bizText = normalize(p.businessName)
   const descText = normalize(p.description ?? '')
@@ -58,7 +95,8 @@ function matchPercent(p: ProductSearchItem, query: string): number {
     wordToTextScore(w, nameText),
     wordToTextScore(w, bizText) * 0.8,
     wordToTextScore(w, descText) * 0.6,
-  ))
+  )).filter((s) => s > 0)
+  if (wordScores.length === 0) return 0
   const best = Math.max(...wordScores)
   const avg = wordScores.reduce((s, x) => s + x, 0) / wordScores.length
   return Math.round(Math.min(1, best * 0.7 + avg * 0.3) * 100)
