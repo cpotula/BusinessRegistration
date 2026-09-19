@@ -107,6 +107,13 @@ export default function ProductDetailPage() {
         {/* Info */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight leading-snug">{product.name}</h1>
+          {reviews && reviews.total > 0 && (
+            <a href="#reviews" className="mt-3 inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full pl-3 pr-4 py-1.5 hover:border-amber-300 hover:bg-amber-50 transition-colors">
+              <span className="text-amber-500 text-sm leading-none">{'★'.repeat(Math.max(1, Math.min(5, Math.round(reviews.averageRating))))}</span>
+              <span className="text-sm font-extrabold text-gray-900">{reviews.averageRating.toFixed(1)}</span>
+              <span className="text-xs text-gray-400">{reviews.total} review{reviews.total === 1 ? '' : 's'}</span>
+            </a>
+          )}
           <div className="mt-4 bg-gray-50 border border-gray-100 rounded-2xl p-5">
             {product.price != null && (
               <>
@@ -213,15 +220,23 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Reviews — Flipkart/Amazon style */}
-      <section className="card p-6 sm:p-8">
+      <section id="reviews" className="card p-6 sm:p-8 scroll-mt-24">
         <h2 className="text-xl font-bold text-gray-900 mb-3">Ratings &amp; Reviews</h2>
         <div className="flex items-center gap-6 mb-6">
           <div className="text-center">
-            <p className="text-5xl font-extrabold text-gray-900">{reviews && reviews.total > 0 ? reviews.averageRating.toFixed(1) : '—'}</p>
-            <p className="text-amber-500 text-lg mt-1">
-              {reviews && reviews.total > 0 ? ['★'.repeat(Math.round(reviews.averageRating))] : '☆☆☆☆☆'}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">{reviews ? reviews.total : 0} review{reviews && reviews.total !== 1 ? 's' : ''}</p>
+            {reviews && reviews.total > 0 ? (
+              <>
+                <p className="text-5xl font-extrabold text-gray-900">{reviews.averageRating.toFixed(1)}</p>
+                <p className="text-amber-500 text-lg mt-1">{'★'.repeat(Math.round(reviews.averageRating))}</p>
+                <p className="text-xs text-gray-400 mt-1">{reviews.total} review{reviews.total !== 1 ? 's' : ''}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-5xl font-extrabold text-gray-300">—</p>
+                <p className="text-amber-200 text-lg mt-1">☆☆☆☆☆</p>
+                <p className="text-xs text-gray-400 mt-1">No reviews yet</p>
+              </>
+            )}
           </div>
           {reviews && reviews.total > 0 && (
             <div className="flex-1 space-y-1 max-w-xs">
