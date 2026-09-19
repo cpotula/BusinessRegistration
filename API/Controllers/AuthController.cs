@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BusinessPortal.API.Controllers;
 
@@ -67,6 +68,28 @@ public class AuthController : ControllerBase
         var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         if (result == PasswordVerificationResult.Failed)
             return Unauthorized(new { message = "Invalid email or password." });
+
+        var token = _tokenService.CreateToken(user);
+        return Ok(ToResponse(user, token));
+    }
+
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null)
+            return Unauthorized(new { message = "Login required." });
+
+        user.Name = request.Name.Trim();
+        if (!string.IsNullOrWhiteSpace(request.Phone))
+            user.Phone = request.Phone.Trim();
+
+        await _db.SaveChangesAsync();
 
         var token = _tokenService.CreateToken(user);
         return Ok(ToResponse(user, token));

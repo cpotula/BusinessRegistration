@@ -18,6 +18,7 @@ import ProductDetailPage from './pages/ProductDetail'
 import CartPage from './pages/Cart'
 import MyOrders from './pages/MyOrders'
 import Services from './pages/Services'
+import CustomerDashboard from './pages/CustomerDashboard'
 
 function Protected({ role, children }: { role: string; children: React.ReactNode }) {
   const { user } = useAuth()
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="/login" element={<PublicPage><Login /></PublicPage>} />
               <Route path="/register" element={<Register />} />
               <Route path="/dashboard" element={<Protected role="BusinessOwner"><OwnerDashboard /></Protected>} />
+              <Route path="/my-account" element={<Protected role="Customer"><CustomerDashboard /></Protected>} />
               <Route path="/admin" element={<Protected role="Admin"><AdminDashboard /></Protected>} />
               <Route path="/admin/business/:id" element={<Protected role="Admin"><AdminBusinessReports /></Protected>} />
               <Route path="*" element={<Navigate to="/" replace />} />

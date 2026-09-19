@@ -28,7 +28,7 @@ export default function Register() {
     e.preventDefault(); setError(''); setLoading(true)
     try {
       await register({ name, email, phone, password, userType: accountType })
-      navigate(accountType === 'business' ? '/dashboard?new=1' : '/')
+      navigate(accountType === 'business' ? '/dashboard?new=1' : '/my-account')
     }
     catch (err: any) { setError(err.response?.data?.message ?? 'Registration failed.') }
     finally { setLoading(false) }

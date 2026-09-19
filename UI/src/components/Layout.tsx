@@ -9,6 +9,7 @@ import { NotificationInfo } from '../api/types'
 export function roleHome(role?: string) {
   if (role === 'Admin') return '/admin'
   if (role === 'BusinessOwner') return '/dashboard'
+  if (role === 'Customer') return '/my-account'
   return '/'
 }
 
@@ -149,7 +150,7 @@ export default function Layout() {
                   <NavLink to="/contact" className={linkCls}>Contact Us</NavLink>
                 </>
               )}
-              {isCustomer && <NavLink to="/my-orders" className={linkCls}>My Orders</NavLink>}
+              {isCustomer && <NavLink to="/my-account" className={linkCls}>Dashboard</NavLink>}
               {isOwner && <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>}
               {isAdmin && <NavLink to="/admin" className={linkCls}>Admin Dashboard</NavLink>}
             </nav>
@@ -215,7 +216,7 @@ export default function Layout() {
                 <Link to="/plans" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">Plans</Link>
                 <Link to="/contact" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">Contact Us</Link>
                 <Link to="/cart" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">Cart{cartCount > 0 ? ` (${cartCount})` : ''}</Link>
-                {isCustomer && <Link to="/my-orders" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">My Orders</Link>}
+                {isCustomer && <Link to="/my-account" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">Dashboard</Link>}
               </>
             )}
             {isOwner && <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">Dashboard</Link>}

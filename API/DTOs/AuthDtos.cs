@@ -17,4 +17,8 @@ public record LoginRequest(
     [Required, EmailAddress] string Email,
     [Required] string Password);
 
+public record UpdateProfileRequest(
+    [Required, MaxLength(100)] string Name,
+    [MaxLength(20)] string? Phone);
+
 public record AuthResponse(int Id, string Name, string Email, string? Phone, string Role, string Token);

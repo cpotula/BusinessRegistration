@@ -5,6 +5,7 @@ interface AuthCtx {
   user: User | null
   login: (email: string, password: string) => Promise<void>
   register: (fields: { name: string; email: string; phone: string; password: string; userType?: string }) => Promise<void>
+  updateProfile: (name: string, phone: string) => Promise<void>
   logout: () => void
 }
 
@@ -27,6 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data)
   }
 
+  const updateProfile = async (name: string, phone: string) => {
+    const { data } = await api.put('/auth/profile', { name, phone })
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify(data))
+    setUser(data)
+  }
+
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
@@ -34,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthCtx.Provider value={{ user, login, register, logout }}>
+    <AuthCtx.Provider value={{ user, login, register, updateProfile, logout }}>
       {children}
     </AuthCtx.Provider>
   )
