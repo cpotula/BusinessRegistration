@@ -21,7 +21,8 @@ public record OrderItemDto(
     string BusinessName,
     decimal UnitPrice,
     int Quantity,
-    string? ImageUrl);
+    string? ImageUrl,
+    bool ReviewedByMe = false);
 
 public record OrderDto(
     int Id,

@@ -1,7 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
-import { ProductDetailInfo, ProductReview, ProductReviewsResult } from '../api/types'
+import { ProductDetailInfo, ProductReview, ProductReviewsResult, ReviewEligibility } from '../api/types'
 import { whatsappChatLink, fmtDate } from '../api/utils'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
@@ -22,6 +22,7 @@ export default function ProductDetailPage() {
   const [added, setAdded] = useState(false)
   const [reviews, setReviews] = useState<ProductReviewsResult | null>(null)
   const [myReview, setMyReview] = useState<ProductReview | null>(null)
+  const [eligibility, setEligibility] = useState<ReviewEligibility | null>(null)
   const [rating, setRating] = useState(5)
   const [hover, setHover] = useState(0)
   const [reviewText, setReviewText] = useState('')
@@ -38,6 +39,9 @@ export default function ProductDetailPage() {
     if (user) {
       api.get(`/products/${id}/my-review`)
         .then(({ data }) => setMyReview(data ?? null))
+        .catch(() => {})
+      api.get(`/products/${id}/review-eligibility`)
+        .then(({ data }) => setEligibility(data))
         .catch(() => {})
     }
   }, [id, user])
@@ -254,13 +258,24 @@ export default function ProductDetailPage() {
         )}
 
         {user && !myReview && (
-          reviewSent ? (
-            <div className="text-center py-6 mb-4 border border-dashed border-green-200 rounded-xl">
-              <p className="text-green-700 font-medium">Thank you! Your review will appear after approval.</p>
+          eligibility && !eligibility.eligible ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 mb-4 text-sm text-gray-600 flex items-start gap-2">
+              <svg className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+              <span>{eligibility.reason} Once your order is delivered, rate &amp; review straight from My Orders.</span>
             </div>
           ) : (
-            <form onSubmit={submitReview} className="space-y-3 mb-5">
-              <p className="text-sm text-gray-500">Reviewing as <strong className="text-gray-900">{user.name}</strong></p>
+            reviewSent ? (
+              <div className="text-center py-6 mb-4 border border-dashed border-green-200 rounded-xl">
+                <p className="text-green-700 font-medium">Thank you! Your review will appear after approval.</p>
+              </div>
+            ) : (
+              <form onSubmit={submitReview} className="space-y-3 mb-5">
+                <p className="text-sm text-gray-500 flex flex-wrap items-center gap-2">
+                  <span>Reviewing as <strong className="text-gray-900">{user.name}</strong></span>
+                  {eligibility?.deliveredCount ? (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">✓ Verified buyer</span>
+                  ) : null}
+                </p>
               <div className="flex gap-1 text-3xl">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button
@@ -280,7 +295,8 @@ export default function ProductDetailPage() {
               <button type="submit" className="px-8 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">Submit Review</button>
             </form>
           )
-        )}
+        )
+      )}
 
         {reviews && reviews.reviews.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

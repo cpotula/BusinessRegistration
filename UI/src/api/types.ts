@@ -63,6 +63,12 @@ export interface ProductReviewsResult {
   reviews: ProductReview[]
 }
 
+export interface ReviewEligibility {
+  eligible: boolean
+  reason: string | null
+  deliveredCount: number
+}
+
 export interface Product {
   id: number
   name: string
@@ -219,6 +225,7 @@ export interface OrderItemInfo {
   unitPrice: number
   quantity: number
   imageUrl: string | null
+  reviewedByMe: boolean
 }
 
 export interface OrderInfo {

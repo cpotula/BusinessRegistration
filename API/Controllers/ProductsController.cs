@@ -123,8 +123,7 @@ public class ProductsController : ControllerBase
     }
 
     // Public product reviews: approved only, Flipkart-style with a
-    // "verified buyer" badge when the reviewer has a confirmed order
-    // that included this product.
+    // "verified buyer" badge when the reviewer had this product delivered.
     [HttpGet("{id:int}/reviews")]
     [AllowAnonymous]
     public async Task<IActionResult> GetReviews(int id)
@@ -144,7 +143,7 @@ public class ProductsController : ControllerBase
             .ToListAsync();
 
         var verifiedBuyerIds = await _db.Orders
-            .Where(o => o.Status == "Confirmed")
+            .Where(o => o.Status == "Delivered")
             .Where(o => o.Items.Any(i => i.ProductId == id))
             .Select(o => o.CustomerUserId)
             .Distinct()
@@ -157,6 +156,30 @@ public class ProductsController : ControllerBase
             approved.Select(r => new ProductReviewDto(
                 r.Id, r.CustomerName, r.Rating, r.ReviewText, r.CreatedAt,
                 r.UserId.HasValue && verifiedSet.Contains(r.UserId.Value)))));
+    }
+
+    // Whether the signed-in user is allowed to leave a review for this
+    // product. Reviews are collected from customers after their order has
+    // been delivered, so the form is shown only then (admins may always post).
+    [HttpGet("{id:int}/review-eligibility")]
+    [Authorize]
+    public async Task<IActionResult> GetReviewEligibility(int id)
+    {
+        var userId = GetUserId();
+
+        if (User.IsInRole(nameof(UserRole.Admin)))
+            return Ok(new ReviewEligibilityDto(true, null, 0));
+
+        var deliveredCount = await _db.Orders
+            .CountAsync(o => o.CustomerUserId == userId
+                && o.Status == "Delivered"
+                && o.Items.Any(i => i.ProductId == id));
+
+        if (deliveredCount > 0)
+            return Ok(new ReviewEligibilityDto(true, null, deliveredCount));
+
+        return Ok(new ReviewEligibilityDto(false,
+            "You can rate & review this product after your order is delivered.", 0));
     }
 
     [HttpGet("{id:int}/my-review")]
@@ -188,6 +211,16 @@ public class ProductsController : ControllerBase
             .AnyAsync(r => r.ProductId == id && r.UserId == userId);
         if (alreadyReviewed)
             return BadRequest(new { message = "You have already reviewed this product." });
+
+        // Reviews are collected after delivery: a customer may review only the
+        // products that have actually been delivered to them. Admins may post
+        // reviews on any product.
+        var isDeliveredBuyer = User.IsInRole(nameof(UserRole.Admin)) ||
+            await _db.Orders.AnyAsync(o => o.CustomerUserId == userId
+                && o.Status == "Delivered"
+                && o.Items.Any(i => i.ProductId == id));
+        if (!isDeliveredBuyer)
+            return BadRequest(new { message = "You can review this product only after your order is delivered." });
 
         var review = new ProductReview
         {

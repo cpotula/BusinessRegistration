@@ -121,14 +121,23 @@ public class OrdersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetMyOrders()
     {
+        var userId = GetUserId();
         var orders = await _db.Orders
-            .Where(o => o.CustomerUserId == GetUserId())
+            .Where(o => o.CustomerUserId == userId)
             .Include(o => o.Items)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
         var images = await BuildImageMap(orders);
-        return Ok(orders.Select(o => ToDto(o, images)).ToList());
+
+        // Products this buyer has already reviewed, so the UI can show
+        // "Reviewed" instead of a "Rate & Review" button on delivered items.
+        var reviewedSet = (await _db.ProductReviews
+            .Where(r => r.UserId == userId)
+            .Select(r => r.ProductId)
+            .ToListAsync()).ToHashSet();
+
+        return Ok(orders.Select(o => ToDto(o, images, reviewedSet)).ToList());
     }
 
     // The business owner confirms the order request from a user.
@@ -223,7 +232,7 @@ public class OrdersController : ControllerBase
             $"Your order #{orderNumber} is out for delivery! Expect it at your doorstep soon."),
         "Delivered" => (
             "Order delivered",
-            $"Your order #{orderNumber} has been delivered. Thank you for shopping with us!"),
+            $"Your order #{orderNumber} has been delivered. Thank you for shopping with us! Please rate & review the delivered products under My Orders."),
         _ => ("Order updated", $"There is an update on your order #{orderNumber}."),
     };
     // grouped by today / this month / this year.
@@ -389,7 +398,7 @@ public class OrdersController : ControllerBase
             .ToDictionary(g => g.Key, g => g.OrderBy(x => x.SortOrder).Select(x => x.Url).FirstOrDefault());
     }
 
-    private static OrderDto ToDto(Order order, Dictionary<int, string?>? images = null)
+    private static OrderDto ToDto(Order order, Dictionary<int, string?>? images = null, HashSet<int>? myReviewedProducts = null)
     {
         return new OrderDto(
             order.Id,
@@ -411,7 +420,8 @@ public class OrdersController : ControllerBase
                 i.BusinessName,
                 i.UnitPrice,
                 i.Quantity,
-                images?.GetValueOrDefault(i.ProductId)
+                images?.GetValueOrDefault(i.ProductId),
+                myReviewedProducts?.Contains(i.ProductId) == true
             )).ToList());
     }
 }

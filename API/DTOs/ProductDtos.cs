@@ -89,6 +89,11 @@ public record ProductReviewRow(
     string? ReviewText,
     bool IsApproved);
 
+public record ReviewEligibilityDto(
+    bool Eligible,
+    string? Reason,
+    int DeliveredCount);
+
 public record EnquiryCreateRequest(
     [Required, MaxLength(100)] string Name,
     [Required, EmailAddress, MaxLength(150)] string Email,
