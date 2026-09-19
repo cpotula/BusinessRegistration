@@ -91,6 +91,8 @@ export interface ProductSearchItem {
   businessId: number
   businessName: string
   businessSlug: string
+  averageRating: number
+  reviewCount: number
 }
 
 export interface ProductDetailInfo {

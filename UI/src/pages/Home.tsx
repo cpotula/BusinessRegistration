@@ -116,6 +116,8 @@ export default function Home() {
                 imageUrl={p.imageUrl}
                 stockQuantity={p.stockQuantity}
                 subtitle={p.businessName}
+                rating={p.averageRating}
+                reviewCount={p.reviewCount}
               />
             ))}
           </div>

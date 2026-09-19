@@ -82,12 +82,24 @@ public class ProductsController : ControllerBase
             .ToList();
 
         var total = matches.Count;
+
+        // Approved ratings per product so the product cards can show the
+        // review score and review count (e.g. "4.0 ★ (3)").
+        var matchedIds = matches.Select(p => p.Id).ToList();
+        var ratingGroups = await _db.ProductReviews
+            .Where(r => r.IsApproved && matchedIds.Contains(r.ProductId))
+            .GroupBy(r => r.ProductId)
+            .ToListAsync();
+        var avgById = ratingGroups.ToDictionary(g => g.Key, g => Math.Round(g.Average(x => x.Rating), 1));
+        var countById = ratingGroups.ToDictionary(g => g.Key, g => g.Count());
+
         var items = matches
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(p => new ProductSearchItemDto(
                 p.Id, p.Name, p.Description, p.Price, p.StockQuantity,
                 p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).FirstOrDefault(),
-                p.BusinessId, p.Business!.Name, p.Business.Slug))
+                p.BusinessId, p.Business!.Name, p.Business.Slug,
+                avgById.GetValueOrDefault(p.Id), countById.GetValueOrDefault(p.Id)))
             .ToList();
 
         return Ok(new { items, total, page, pageSize });

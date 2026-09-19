@@ -39,7 +39,9 @@ public record ProductSearchItemDto(
     string? ImageUrl,
     int BusinessId,
     string BusinessName,
-    string BusinessSlug);
+    string BusinessSlug,
+    double AverageRating,
+    int ReviewCount);
 
 public record ProductDetailDto(
     int Id,
