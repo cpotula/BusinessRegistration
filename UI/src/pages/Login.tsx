@@ -51,7 +51,7 @@ export default function Login() {
           </button>
         </form>
         <p className="mt-6 text-center text-sm text-gray-500">
-          New here? <Link to="/register" className="text-primary-600 font-semibold hover:underline">Register here</Link> — pick user or business account
+          New here? <Link to="/register" className="text-primary-600 font-semibold hover:underline">Register Now</Link> — pick user or business account
         </p>
         <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-500">
           <p className="font-medium text-slate-700 mb-1.5">Demo Accounts:</p>
