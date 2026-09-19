@@ -34,7 +34,7 @@ export default function Login() {
             <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 text-sm mt-1.5">Sign in to manage your business</p>
+          <p className="text-gray-500 text-sm mt-1.5">Sign in to buy products or manage your business</p>
         </div>
         <form onSubmit={submit} className="space-y-5">
           <div>
@@ -51,7 +51,7 @@ export default function Login() {
           </button>
         </form>
         <p className="mt-6 text-center text-sm text-gray-500">
-          New here? <Link to="/register" className="text-primary-600 font-semibold hover:underline">Register your business</Link>
+          New here? <Link to="/register" className="text-primary-600 font-semibold hover:underline">Register here</Link> — pick user or business account
         </p>
         <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-500">
           <p className="font-medium text-slate-700 mb-1.5">Demo Accounts:</p>
