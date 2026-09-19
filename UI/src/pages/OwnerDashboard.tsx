@@ -842,6 +842,14 @@ function OrdersSec() {
                 <div className="px-4 py-3">
                   <p className="text-sm text-gray-800 font-medium">{o.customerName}</p>
                   {o.customerPhone && <p className="text-xs text-gray-500">{o.customerPhone}{o.customerEmail ? ` · ${o.customerEmail}` : ''}</p>}
+                  {o.deliveryAddress && (
+                    <div className="mt-2 rounded-lg bg-primary-50 border border-primary-100 px-3 py-2 text-xs">
+                      <p className="font-bold text-primary-700 uppercase tracking-wide">🚚 Deliver to</p>
+                      <p className="text-gray-800 font-medium mt-0.5">{o.deliveryName}</p>
+                      {o.deliveryPhone && <p className="text-gray-600">{o.deliveryPhone}</p>}
+                      <p className="text-gray-600">{o.deliveryAddress}</p>
+                    </div>
+                  )}
                   <div className="mt-3">
                     <OrderStatusBar
                       status={o.status}

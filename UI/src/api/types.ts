@@ -227,6 +227,9 @@ export interface OrderInfo {
   customerName: string
   customerEmail: string | null
   customerPhone: string | null
+  deliveryName: string | null
+  deliveryPhone: string | null
+  deliveryAddress: string | null
   totalAmount: number
   status: string
   createdAt: string

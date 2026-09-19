@@ -4,7 +4,7 @@ import { api, getUser, User } from '../api/client'
 interface AuthCtx {
   user: User | null
   login: (email: string, password: string) => Promise<void>
-  register: (fields: { name: string; email: string; phone: string; password: string; userType?: string; address?: string; city?: string; state?: string; pincode?: string }) => Promise<void>
+  register: (fields: { name: string; email: string; phone: string; password: string; userType?: string }) => Promise<void>
   logout: () => void
 }
 
@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data)
   }
 
-  const register = async (fields: { name: string; email: string; phone: string; password: string; userType?: string; address?: string; city?: string; state?: string; pincode?: string }) => {
+  const register = async (fields: { name: string; email: string; phone: string; password: string; userType?: string }) => {
     const { data } = await api.post('/auth/register', fields)
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data))

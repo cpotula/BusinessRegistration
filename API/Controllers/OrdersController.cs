@@ -37,6 +37,12 @@ public class OrdersController : ControllerBase
         if (items.Any(i => i.Quantity <= 0))
             return BadRequest(new { message = "Invalid item quantity." });
 
+        if (request!.Delivery &&
+            (string.IsNullOrWhiteSpace(request.DeliveryName) ||
+             string.IsNullOrWhiteSpace(request.DeliveryPhone) ||
+             string.IsNullOrWhiteSpace(request.DeliveryAddress)))
+            return BadRequest(new { message = "Please provide the delivery name, phone and address." });
+
         var productIds = items.Select(i => i.ProductId).Distinct().ToList();
         if (productIds.Count != items.Count)
             return BadRequest(new { message = "Duplicate product in cart." });
@@ -77,6 +83,9 @@ public class OrdersController : ControllerBase
             CustomerName = user.Name,
             CustomerEmail = user.Email,
             CustomerPhone = user.Phone,
+            DeliveryName = request.Delivery ? request.DeliveryName?.Trim() : null,
+            DeliveryPhone = request.Delivery ? request.DeliveryPhone?.Trim() : null,
+            DeliveryAddress = request.Delivery ? request.DeliveryAddress?.Trim() : null,
             TotalAmount = total,
             Status = "Pending",
             Items = orderItems
@@ -388,6 +397,9 @@ public class OrdersController : ControllerBase
             order.CustomerName,
             order.CustomerEmail,
             order.CustomerPhone,
+            order.DeliveryName,
+            order.DeliveryPhone,
+            order.DeliveryAddress,
             order.TotalAmount,
             order.Status,
             order.CreatedAt,

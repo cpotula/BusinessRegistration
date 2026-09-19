@@ -14,10 +14,6 @@ export default function Register() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
-  const [city, setCity] = useState('')
-  const [state, setState] = useState('')
-  const [pincode, setPincode] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,7 +27,7 @@ export default function Register() {
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setError(''); setLoading(true)
     try {
-      await register({ name, email, phone, password, userType: accountType, address, city, state, pincode })
+      await register({ name, email, phone, password, userType: accountType })
       navigate(accountType === 'business' ? '/dashboard?new=1' : '/')
     }
     catch (err: any) { setError(err.response?.data?.message ?? 'Registration failed.') }
@@ -84,31 +80,6 @@ export default function Register() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
             <input placeholder="Phone number (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-field" />
           </div>
-          {accountType === 'customer' && (
-            <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-4">
-              <p className="text-sm font-bold text-gray-900 mb-3">📍 Delivery address</p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <textarea placeholder="House no / building name, street, area, landmark" value={address} onChange={(e) => setAddress(e.target.value)} className="input-field" />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
-                    <input placeholder="PIN code" inputMode="numeric" maxLength={10} value={pincode} onChange={(e) => setPincode(e.target.value)} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                    <input placeholder="State" value={state} onChange={(e) => setState(e.target.value)} className="input-field" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input required type="password" placeholder="Min 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" />

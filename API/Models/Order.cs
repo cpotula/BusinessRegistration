@@ -23,6 +23,15 @@ public class Order
     [MaxLength(20)]
     public string? CustomerPhone { get; set; }
 
+    [MaxLength(300)]
+    public string? DeliveryName { get; set; }
+
+    [MaxLength(20)]
+    public string? DeliveryPhone { get; set; }
+
+    [MaxLength(300)]
+    public string? DeliveryAddress { get; set; }
+
     [Column(TypeName = "decimal(18,2)")]
     public decimal TotalAmount { get; set; }
 

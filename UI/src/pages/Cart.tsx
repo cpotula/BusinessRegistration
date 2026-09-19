@@ -15,13 +15,25 @@ export default function CartPage() {
   const [placing, setPlacing] = useState(false)
   const [placedNo, setPlacedNo] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [wantDelivery, setWantDelivery] = useState(false)
+  const [deliveryName, setDeliveryName] = useState(user?.name ?? '')
+  const [deliveryPhone, setDeliveryPhone] = useState('')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
 
   const placeOrder = async () => {
     if (!user || items.length === 0) return
+    if (wantDelivery && (!deliveryName.trim() || !deliveryPhone.trim() || !deliveryAddress.trim())) {
+      setError('Please enter the delivery name, phone and address.')
+      return
+    }
     setPlacing(true); setError('')
     try {
       const { data } = await api.post('/orders', {
         items: items.map((i) => ({ productId: i.productId, quantity: i.qty })),
+        delivery: wantDelivery,
+        deliveryName: wantDelivery ? (deliveryName.trim() || user.name) : null,
+        deliveryPhone: wantDelivery ? deliveryPhone.trim() : null,
+        deliveryAddress: wantDelivery ? deliveryAddress.trim() : null,
       })
       setPlacedNo(data.orderNumber)
       clear()
@@ -99,8 +111,8 @@ export default function CartPage() {
               <span>{inr(total)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>Delivery</span>
-              <span className="text-green-600">Contact seller</span>
+              <span>{wantDelivery ? 'Home delivery' : 'Delivery'}</span>
+              <span className={wantDelivery ? 'text-primary-600' : 'text-green-600'}>{wantDelivery ? 'Details below' : 'Contact seller'}</span>
             </div>
           </div>
           <div className="border-t border-gray-100 mt-4 pt-4 flex justify-between items-center">
@@ -121,6 +133,29 @@ export default function CartPage() {
             </div>
           ) : (
             <>
+              <div className="mt-5 rounded-xl border border-gray-200 p-4">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" checked={wantDelivery} onChange={(e) => setWantDelivery(e.target.checked)} className="w-4 h-4 text-primary-600 accent-primary-600 rounded focus:ring-primary-500" />
+                  <span className="text-sm font-semibold text-gray-900">🚚 Deliver this order to me</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">Leave unchecked to coordinate pickup with the seller.</p>
+                {wantDelivery && (
+                  <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Name</label>
+                      <input required value={deliveryName} onChange={(e) => setDeliveryName(e.target.value)} placeholder="Full name" className="input-field" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Phone</label>
+                      <input required value={deliveryPhone} onChange={(e) => setDeliveryPhone(e.target.value)} placeholder="Phone number" className="input-field" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Address</label>
+                      <textarea required value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder="House no / building name, street, area, landmark" className="input-field" rows={3} />
+                    </div>
+                  </div>
+                )}
+              </div>
               {error && <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">{error}</p>}
               <button
                 onClick={placeOrder}

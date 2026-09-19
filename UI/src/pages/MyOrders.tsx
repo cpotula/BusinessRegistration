@@ -79,6 +79,14 @@ export default function MyOrders() {
                   <div className="mt-4 pt-3 border-t flex justify-between text-sm font-semibold text-gray-900">
                     <span>Total</span><span>{inr(total)}</span>
                   </div>
+                  {o.deliveryAddress && (
+                    <div className="mt-3 rounded-xl bg-primary-50 border border-primary-100 px-4 py-3 text-sm">
+                      <p className="text-xs font-bold uppercase tracking-wide text-primary-700 mb-1">🚚 Deliver to</p>
+                      <p className="text-sm font-medium text-gray-900">{o.deliveryName}</p>
+                      {o.deliveryPhone && <p className="text-xs text-gray-600 mt-0.5">{o.deliveryPhone}</p>}
+                      <p className="text-xs text-gray-600 mt-0.5">{o.deliveryAddress}</p>
+                    </div>
+                  )}
                   <div className="mt-4">
                     <OrderStatusBar status={o.status} />
                   </div>

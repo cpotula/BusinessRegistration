@@ -4,7 +4,12 @@ namespace BusinessPortal.API.DTOs;
 
 public record PlaceOrderItemRequest(int ProductId, int Quantity);
 
-public record PlaceOrderRequest(List<PlaceOrderItemRequest> Items);
+public record PlaceOrderRequest(
+    List<PlaceOrderItemRequest> Items,
+    bool Delivery = false,
+    [MaxLength(100)] string? DeliveryName = null,
+    [MaxLength(20)] string? DeliveryPhone = null,
+    [MaxLength(300)] string? DeliveryAddress = null);
 
 public record OrderStatusUpdateRequest(string Status);
 
@@ -24,6 +29,9 @@ public record OrderDto(
     string CustomerName,
     string? CustomerEmail,
     string? CustomerPhone,
+    string? DeliveryName,
+    string? DeliveryPhone,
+    string? DeliveryAddress,
     decimal TotalAmount,
     string Status,
     DateTime CreatedAt,
