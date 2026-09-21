@@ -121,6 +121,17 @@ export interface Plan {
   amount: number
   description: string
   productLimit?: number | null
+  stockLimit?: number | null
+}
+
+export interface SubscriptionUsage {
+  planName: string | null
+  productLimit: number | null
+  stockLimit: number | null
+  productCount: number
+  productsOverStock: number
+  remaining: number | null
+  paymentConfirmed: boolean
 }
 
 export interface Subscription {
@@ -181,6 +192,8 @@ export interface AdminBusinessListItem {
   isActive: boolean
   isPublished: boolean
   subscriptionExpiresOn: string | null
+  subscriptionPlanName: string | null
+  subscriptionPaymentStatus: string | null
   createdAt: string
 }
 

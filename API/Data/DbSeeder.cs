@@ -135,7 +135,7 @@ public static class DbSeeder
             new Subscription
             {
                 BusinessId = business1.Id,
-                PlanName = "Annual",
+                PlanName = "Platinum",
                 Amount = 5000m,
                 PaymentMethod = "Manual",
                 PaymentStatus = SubscriptionStatus.Paid,
@@ -147,7 +147,7 @@ public static class DbSeeder
             new Subscription
             {
                 BusinessId = business2.Id,
-                PlanName = "Quarterly",
+                PlanName = "Silver",
                 Amount = 1500m,
                 PaymentMethod = "Manual",
                 PaymentStatus = SubscriptionStatus.Paid,

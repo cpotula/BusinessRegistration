@@ -87,18 +87,38 @@ public class SubscriptionsController : ControllerBase
     {
         var now = DateTime.UtcNow;
         var subscriptions = await db.Subscriptions
-            .Where(s => s.BusinessId == businessId && s.PaymentStatus == SubscriptionStatus.Paid)
+            .Where(s => s.BusinessId == businessId)
             .ToListAsync();
-        var active = subscriptions
-            .Where(s => s.EndDate >= now)
+
+        // A paid, unexpired subscription is the active plan. However, a brand
+        // new business that selected a plan at registration (payment still
+        // pending) must respect that plan's caps from day one - otherwise it
+        // could list unlimited products/stock until payment is confirmed.
+        // PaymentConfirmed tells callers whether the admin has actually
+        // confirmed the payment, which gates adding/managing products.
+        var paid = subscriptions
+            .Where(s => s.PaymentStatus == SubscriptionStatus.Paid && s.EndDate >= now)
             .OrderByDescending(s => s.EndDate)
             .FirstOrDefault();
+        var active = paid
+            ?? subscriptions
+                .Where(s => s.PaymentStatus == SubscriptionStatus.Pending)
+                .OrderByDescending(s => s.CreatedAt)
+                .FirstOrDefault();
 
         var plan = active is not null ? SubscriptionPlans.Find(active.PlanName) : null;
-        var count = await db.Products.CountAsync(p => p.BusinessId == businessId && p.IsActive);
+        var products = await db.Products
+            .Where(p => p.BusinessId == businessId && p.IsActive)
+            .ToListAsync();
+        var count = products.Count;
 
         var remaining = plan?.ProductLimit is int limit ? Math.Max(limit - count, 0) : (int?)null;
-        return new SubscriptionUsageDto(plan?.Name, plan?.ProductLimit, count, remaining);
+        var overStock = plan?.StockLimit is int stockLimit
+            ? products.Count(p => p.StockQuantity > stockLimit)
+            : 0;
+        return new SubscriptionUsageDto(
+            plan?.Name, plan?.ProductLimit, plan?.StockLimit, count, overStock, remaining,
+            PaymentConfirmed: paid is not null);
     }
 
     // How many of the plan's allowed products this business is currently using.

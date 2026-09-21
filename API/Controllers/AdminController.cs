@@ -174,9 +174,22 @@ public class AdminController : ControllerBase
             .OrderByDescending(b => b.CreatedAt)
             .Select(b => new AdminBusinessListItemDto(
                 b.Id, b.Name, b.Slug, b.Category!.Name, b.OwnerUser!.Email, b.City,
-                b.IsActive, b.IsPublished, b.SubscriptionExpiresOn, b.CreatedAt))
+                b.IsActive, b.IsPublished, b.SubscriptionExpiresOn,
+                b.Subscriptions.OrderByDescending(s => s.EndDate).Select(s => s.PlanName).FirstOrDefault(),
+                b.Subscriptions.OrderByDescending(s => s.EndDate).Select(s => s.PaymentStatus.ToString()).FirstOrDefault(),
+                b.CreatedAt))
             .ToListAsync();
         return Ok(items);
+    }
+
+    // A business may only be activated/approved when it has a confirmed (paid)
+    // subscription that is currently in force, so nobody can sell without paying.
+    private async Task<bool> HasPaidSubscription(int businessId)
+    {
+        return await _db.Subscriptions.AnyAsync(s =>
+            s.BusinessId == businessId
+            && s.PaymentStatus == SubscriptionStatus.Paid
+            && s.EndDate > DateTime.UtcNow);
     }
 
     [HttpPut("businesses/{id:int}/status")]
@@ -186,6 +199,9 @@ public class AdminController : ControllerBase
         if (business is null)
             return NotFound();
 
+        if (isActive && !await HasPaidSubscription(id))
+            return BadRequest(new { message = "Cannot activate: this business has no confirmed (paid) subscription. Record the subscription payment first." });
+
         business.IsActive = isActive;
         await _db.SaveChangesAsync();
         return NoContent();
@@ -193,12 +209,17 @@ public class AdminController : ControllerBase
 
     // Admin approval: activates AND publishes a newly registered business so it
     // appears on the public website. The business stays hidden until approved.
+    // Approval is blocked until the admin has confirmed (recorded) the payment
+    // for the business's subscription.
     [HttpPut("businesses/{id:int}/approve")]
     public async Task<IActionResult> ApproveBusiness(int id, [FromBody] bool approved)
     {
         var business = await _db.Businesses.FindAsync(id);
         if (business is null)
             return NotFound();
+
+        if (approved && !await HasPaidSubscription(id))
+            return BadRequest(new { message = "Approval blocked: the subscription for this business has not been paid yet. Confirm the payment under Subscriptions → Record Payment, then approve." });
 
         business.IsActive = approved;
         business.IsPublished = approved;

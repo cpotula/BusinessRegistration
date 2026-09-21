@@ -269,8 +269,15 @@ public class ProductsController : ControllerBase
             return Forbid();
 
         var usage = await SubscriptionsController.ComputeUsage(_db, businessId);
+        if (!usage.PaymentConfirmed)
+            return BadRequest(new { message = $"Your {usage.PlanName} subscription hasn't been confirmed yet. Once the admin confirms the payment, you can add products." });
+
         if (usage.ProductLimit is int limit && usage.ProductCount >= limit)
-            return BadRequest(new { message = $"Your {usage.PlanName} plan allows selling up to {limit} products. Upgrade to Standard (60 products) or Gold (unlimited) to list more." });
+            return BadRequest(new { message = $"Your {usage.PlanName} plan allows selling up to {limit} products. {ProductUpgradeHint(limit)}" });
+
+        var stockQuantity = request.StockQuantity ?? 10;
+        if (usage.StockLimit is int stockLimit && stockQuantity > stockLimit)
+            return BadRequest(new { message = $"Your {usage.PlanName} plan allows up to {stockLimit} units of stock per product. {StockUpgradeHint(stockLimit)}" });
 
         var product = new Product
         {
@@ -278,7 +285,7 @@ public class ProductsController : ControllerBase
             Name = request.Name,
             Description = request.Description,
             Price = request.Price,
-            StockQuantity = request.StockQuantity ?? 10,
+            StockQuantity = stockQuantity,
             IsActive = true,
             IsApproved = false
         };
@@ -300,12 +307,20 @@ public class ProductsController : ControllerBase
         if (!IsAdmin() && product.Business!.OwnerUserId != GetUserId())
             return Forbid();
 
+        var usage = await SubscriptionsController.ComputeUsage(_db, product.BusinessId);
+        if (!usage.PaymentConfirmed)
+            return BadRequest(new { message = $"Your {usage.PlanName} subscription hasn't been confirmed yet. Once the admin confirms the payment, you can manage your products." });
+
         product.Name = request.Name;
         product.Description = request.Description;
         product.Price = request.Price;
         product.IsActive = request.IsActive;
         if (request.StockQuantity is not null)
+        {
+            if (usage.StockLimit is int stockLimit && request.StockQuantity.Value > stockLimit)
+                return BadRequest(new { message = $"Your {usage.PlanName} plan allows up to {stockLimit} units of stock per product. {StockUpgradeHint(stockLimit)}" });
             product.StockQuantity = request.StockQuantity.Value;
+        }
         product.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return NoContent();
@@ -324,6 +339,10 @@ public class ProductsController : ControllerBase
         if (!IsAdmin() && product.Business!.OwnerUserId != GetUserId())
             return Forbid();
 
+        var usage = await SubscriptionsController.ComputeUsage(_db, product.BusinessId);
+        if (!usage.PaymentConfirmed)
+            return BadRequest(new { message = $"Your {usage.PlanName} subscription hasn't been confirmed yet. Once the admin confirms the payment, you can update your inventory." });
+
         if (request.Price is not null)
         {
             if (request.Price < 0)
@@ -335,6 +354,8 @@ public class ProductsController : ControllerBase
         {
             if (request.StockQuantity < 0)
                 return BadRequest(new { message = "Stock quantity cannot be negative." });
+            if (usage.StockLimit is int stockLimit && request.StockQuantity.Value > stockLimit)
+                return BadRequest(new { message = $"Your {usage.PlanName} plan allows up to {stockLimit} units of stock per product. {StockUpgradeHint(stockLimit)}" });
             product.StockQuantity = request.StockQuantity.Value;
         }
 
@@ -459,6 +480,30 @@ public class ProductsController : ControllerBase
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     private bool IsAdmin() => User.IsInRole(nameof(UserRole.Admin));
+
+// Suggest only the plans that are actually better than the current limit,
+// so a Gold business is told to go up to Platinum (not to Gold).
+private static string ProductUpgradeHint(int? currentLimit)
+{
+    if (currentLimit is null) return "";
+    var higher = SubscriptionPlans.All
+        .Where(p => p.ProductLimit is null || (currentLimit is int c && p.ProductLimit.Value > c))
+        .OrderBy(p => p.Amount)
+        .Select(p => p.ProductLimit is null ? $"{p.Name} (unlimited)" : $"{p.Name} ({p.ProductLimit} products)")
+        .ToList();
+    return higher.Count == 0 ? "" : $"Upgrade to {string.Join(" or ", higher)} to list more.";
+}
+
+private static string StockUpgradeHint(int? currentLimit)
+{
+    if (currentLimit is null) return "";
+    var higher = SubscriptionPlans.All
+        .Where(p => p.StockLimit is null || (currentLimit is int c && p.StockLimit.Value > c))
+        .OrderBy(p => p.Amount)
+        .Select(p => p.StockLimit is null ? $"{p.Name} (unlimited)" : $"{p.Name} ({p.StockLimit} units)")
+        .ToList();
+    return higher.Count == 0 ? "" : $"Upgrade to {string.Join(" or ", higher)} to hold more.";
+}
 
     private bool CanManage(Business business)
     {

@@ -2,7 +2,7 @@ import { useEffect, useState, FormEvent, ChangeEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
-import { BusinessSummary, BusinessDetail, Category, Enquiry, Product, Subscription, Testimonial, Plan, OrderInfo, SoldSummary, SoldByPeriod } from '../api/types'
+import { BusinessSummary, BusinessDetail, Category, Enquiry, Product, Subscription, Testimonial, Plan, SubscriptionUsage, OrderInfo, SoldSummary, SoldByPeriod } from '../api/types'
 import { subscriptionState, subscriptionBadge, daysUntil, fmtDate, completeness } from '../api/utils'
 import OrderStatusBar, { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, ORDER_STATUS_BADGE, OrderStatus } from '../components/OrderStatusBar'
 import SalesByPeriodCard from '../components/SalesByPeriodCard'
@@ -277,23 +277,28 @@ interface WizardFields {
   name: string; categoryId: number; description: string
   contactPhone: string; contactWhatsApp: string; contactEmail: string
   address: string; city: string; websiteUrl: string; businessHours: string
-  logoUrl: string; coverUrl: string
+  logoUrl: string; coverUrl: string; planName: string
 }
 
 function Wizard({ cats, onCreated, onCancel }: { cats: Category[]; onCreated: (id: number) => void; onCancel?: () => void }) {
   const [step, setStep] = useState(0)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [plans, setPlans] = useState<Plan[]>([])
   const [f, setF] = useState<WizardFields>({
     name: '', categoryId: cats[0]?.id ?? 1, description: '',
     contactPhone: '', contactWhatsApp: '', contactEmail: '',
     address: '', city: '', websiteUrl: '', businessHours: '',
-    logoUrl: '', coverUrl: '',
+    logoUrl: '', coverUrl: '', planName: '',
   })
   const set = (patch: Partial<WizardFields>) => setF({ ...f, ...patch })
 
-  const steps = ['Basics', 'Contact & Hours', 'Photos', 'Preview & Publish']
-  const canNext = step !== 0 || (f.name.trim().length > 1)
+  useEffect(() => {
+    api.get('/subscriptions/plans').then(({ data }) => setPlans(data)).catch(() => {})
+  }, [])
+
+  const steps = ['Basics', 'Contact & Hours', 'Photos', 'Subscription', 'Preview & Publish']
+  const canNext = step === 0 ? f.name.trim().length > 1 : step === 3 ? f.planName !== '' : true
 
   const submit = async (publish: boolean) => {
     setBusy(true); setErr('')
@@ -365,6 +370,37 @@ function Wizard({ cats, onCreated, onCancel }: { cats: Category[]; onCreated: (i
       )}
 
       {step === 3 && (
+        <div className="space-y-5">
+          <div>
+            <h3 className="font-semibold text-gray-900">Choose your subscription plan *</h3>
+            <p className="text-sm text-gray-500 mt-1">Every business needs at least one plan. You can upgrade or renew anytime from the Subscription tab in your dashboard.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {plans.map((p) => {
+              const selected = f.planName === p.name
+              return (
+                <button key={p.name} type="button" onClick={() => set({ planName: p.name })}
+                  className={`rounded-2xl border-2 p-5 text-left transition-colors ${selected ? 'border-primary-600 bg-primary-50' : 'border-gray-200 hover:border-primary-300'}`}>
+                  <p className="font-bold text-gray-900">{p.name}</p>
+                  <p className="text-2xl font-extrabold text-gray-900 mt-1">₹{p.amount.toLocaleString()}</p>
+                  <p className="text-xs text-gray-400">/ {p.months} months</p>
+                  <ul className="mt-3 space-y-1.5 text-xs text-gray-600">
+                    <li>{p.productLimit == null ? 'Unlimited products' : `Up to ${p.productLimit} products`}</li>
+                    <li>{p.stockLimit == null ? 'Unlimited stock per product' : `Up to ${p.stockLimit} units of stock per product`}</li>
+                  </ul>
+                  <div className="mt-3">
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${selected ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                      {selected ? '✓ Selected' : 'Select'}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {step === 4 && (
         <div className="space-y-4">
           <div className="rounded-2xl border p-5 bg-gray-50">
             <div className="flex items-center gap-4">
@@ -376,8 +412,16 @@ function Wizard({ cats, onCreated, onCancel }: { cats: Category[]; onCreated: (i
               </div>
             </div>
             {f.description && <p className="text-sm text-gray-600 mt-3">{f.description}</p>}
+            {f.planName && (
+              <div className="mt-4 rounded-xl border border-primary-100 bg-white p-4">
+                <p className="text-xs font-medium text-gray-500">Subscription plan</p>
+                <p className="font-bold text-gray-900">
+                  {f.planName} — ₹{plans.find((p) => p.name === f.planName)?.amount.toLocaleString()} / {plans.find((p) => p.name === f.planName)?.months} months
+                </p>
+              </div>
+            )}
           </div>
-          <p className="text-sm text-gray-500">After creating, your business will be sent to the administrator for approval. It will appear on the website to everyone only after the admin approves it.</p>
+          <p className="text-sm text-gray-500">After creating, your business will be sent to the administrator for approval. Once your plan payment is confirmed and the admin approves it, your page appears on the website to everyone.</p>
         </div>
       )}
 
@@ -500,34 +544,53 @@ function BizEditor({ bizId, cats, onChanged }: { bizId: number; cats: Category[]
 
 function ProductsSec({ bizId }: { bizId: number }) {
   const [products, setProducts] = useState<Product[]>([])
+  const [usage, setUsage] = useState<SubscriptionUsage | null>(null)
   const [name, setName] = useState(''); const [desc, setDesc] = useState(''); const [price, setPrice] = useState('')
+  const [stock, setStock] = useState('')
   const [busy, setBusy] = useState(false)
 
   const load = () => api.get(`/products?businessId=${bizId}`).then(({ data }) => setProducts(data))
-  useEffect(() => { load() }, [bizId])
+  const loadUsage = () => api.get(`/subscriptions/usage?businessId=${bizId}`).then(({ data }) => setUsage(data))
+  useEffect(() => { load(); loadUsage() }, [bizId])
 
   const add = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true)
     try {
-      await api.post(`/products?businessId=${bizId}`, { name, description: desc, price: price ? Number(price) : null })
-      setName(''); setDesc(''); setPrice('')
-      load()
+      await api.post(`/products?businessId=${bizId}`, { name, description: desc, price: price ? Number(price) : null, stockQuantity: stock !== '' ? Number(stock) : null })
+      setName(''); setDesc(''); setPrice(''); setStock('')
+      load(); loadUsage()
+    } catch (ex: any) {
+      alert(ex.response?.data?.message ?? 'Could not add the product.')
     } finally { setBusy(false) }
   }
 
   const del = async (id: number) => {
-    if (confirm('Delete this product/service?')) { await api.delete(`/products/${id}`); load() }
+    if (confirm('Delete this product/service?')) { await api.delete(`/products/${id}`); load(); loadUsage() }
   }
 
   return (
     <div className="space-y-6">
+      {!usage?.paymentConfirmed && (
+        <div className="rounded-xl px-4 py-3 text-sm bg-amber-50 text-amber-700 border border-amber-200">
+          Your {usage?.planName ?? ''} subscription payment hasn't been confirmed yet. Once the admin confirms the payment, you can add products.
+        </div>
+      )}
       <form onSubmit={add} className="bg-white rounded-2xl border p-6 max-w-2xl space-y-3">
-        <h2 className="text-xl font-bold text-gray-900">Add product / service</h2>
-        <input required placeholder="Name (e.g. Chicken Biryani)" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
-        <textarea rows={2} placeholder="Short description" value={desc} onChange={(e) => setDesc(e.target.value)} className={inputCls} />
-        <input placeholder="Price in ₹ (optional)" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} className={inputCls} />
-        <button type="submit" disabled={busy} className="px-6 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 disabled:opacity-50">Add</button>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="text-xl font-bold text-gray-900">Add product / service</h2>
+          {usage && usage.productLimit != null && (
+            <span className="text-xs font-medium text-primary-700 bg-primary-50 border border-primary-100 rounded-full px-3 py-1">
+              {usage.productCount} of {usage.productLimit} products used
+            </span>
+          )}
+        </div>
+        <input required placeholder="Name (e.g. Chicken Biryani)" value={name} onChange={(e) => setName(e.target.value)} disabled={!usage?.paymentConfirmed} className={inputCls} />
+        <textarea rows={2} placeholder="Short description" value={desc} onChange={(e) => setDesc(e.target.value)} disabled={!usage?.paymentConfirmed} className={inputCls} />
+        <input placeholder="Price in ₹ (optional)" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} disabled={!usage?.paymentConfirmed} className={inputCls} />
+        <input placeholder={`Initial stock (optional, max ${usage?.stockLimit ?? 'unlimited'} units per product)`} type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} disabled={!usage?.paymentConfirmed} className={inputCls} />
+        <button type="submit" disabled={busy || !usage?.paymentConfirmed} className="px-6 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 disabled:opacity-50">Add</button>
         <p className="text-xs text-gray-500">Newly added products need admin approval and will show on the website only after approval.</p>
+        {usage?.stockLimit != null && <p className="text-xs text-gray-500">Your {usage.planName} plan allows up to <span className="font-medium">{usage.stockLimit} units</span> of stock per product.</p>}
       </form>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -595,7 +658,7 @@ function SubSec({ bizId }: { bizId: number }) {
   const [subs, setSubs] = useState<Subscription[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
   const [detail, setDetail] = useState<BusinessDetail | null>(null)
-  const [usage, setUsage] = useState<{ planName: string | null; productLimit: number | null; productCount: number; remaining: number | null }>({ planName: null, productLimit: null, productCount: 0, remaining: null })
+  const [usage, setUsage] = useState<SubscriptionUsage>({ planName: null, productLimit: null, stockLimit: null, productCount: 0, productsOverStock: 0, remaining: null, paymentConfirmed: false })
   const [notice, setNotice] = useState('')
   const [busyPlan, setBusyPlan] = useState('')
 
@@ -637,6 +700,12 @@ function SubSec({ bizId }: { bizId: number }) {
         <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${badge.cls}`}>
           <span className={`w-2 h-2 rounded-full ${badge.dot}`} />{badge.label}
         </span>
+        {!usage.paymentConfirmed && (
+          <p className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
+            Payment pending — your {usage.planName} subscription payment has not been confirmed by the admin yet.
+            You cannot add or edit products until the payment is confirmed.
+          </p>
+        )}
         {usage.planName && (
           <div className="mt-4 rounded-2xl bg-slate-50 border border-slate-100 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -664,6 +733,18 @@ function SubSec({ bizId }: { bizId: number }) {
                 </p>
               </>
             )}
+            <div className="mt-3 border-t border-slate-200 pt-3 text-xs">
+              {usage.stockLimit != null ? (
+                <p className="text-gray-500">Stock cap per product: <span className="font-semibold text-gray-700">{usage.stockLimit} units</span> — raised automatically when you upgrade.</p>
+              ) : (
+                <p className="text-gray-500">Stock cap per product: <span className="font-semibold text-gray-700">Unlimited</span></p>
+              )}
+              {usage.productsOverStock > 0 && (
+                <p className="mt-1.5 rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-red-700 font-medium">
+                  {usage.productsOverStock} product{usage.productsOverStock === 1 ? '' : 's'} hold more stock than your {usage.planName} plan allows ({usage.stockLimit} units each). {usage.stockLimit != null && usage.stockLimit < 40 ? 'Upgrade to Gold (40 units) or Platinum (unlimited) to keep them, or reduce the stock below the cap.' : 'Upgrade to Platinum (unlimited) to keep them, or reduce the stock below the cap.'}
+                </p>
+              )}
+            </div>
           </div>
         )}
         {state !== 'active' && (
@@ -687,6 +768,9 @@ function SubSec({ bizId }: { bizId: number }) {
                 <p className="text-xs text-gray-400">per year</p>
                 <p className="mt-2 text-xs font-medium text-gray-600">
                   {p.productLimit == null ? 'Unlimited products' : `Up to ${p.productLimit} products`}
+                </p>
+                <p className="mt-0.5 text-xs font-medium text-gray-500">
+                  {p.stockLimit == null ? 'Unlimited stock per product' : `Up to ${p.stockLimit} units of stock per product`}
                 </p>
                 <button
                   onClick={() => renew(p.name)}
@@ -993,6 +1077,8 @@ function ProductTable({ products, onChanged }: { products: Product[]; onChanged:
       onChanged()
     } catch (ex: any) {
       alert(ex.response?.data?.message ?? 'Could not save changes.')
+      setEditingId(null)
+      onChanged()
     } finally {
       setSaving(false)
     }
@@ -1066,12 +1152,14 @@ function ProductTable({ products, onChanged }: { products: Product[]; onChanged:
 
 function InventorySec({ bizId }: { bizId: number }) {
   const [products, setProducts] = useState<Product[]>([])
+  const [usage, setUsage] = useState<SubscriptionUsage | null>(null)
   const [sold, setSold] = useState<SoldSummary | null>(null)
   const load = () => api.get(`/products?businessId=${bizId}`).then(({ data }) => setProducts(data))
   const loadSold = () => api.get(`/orders/sold?businessId=${bizId}`).then(({ data }) => setSold(data))
   useEffect(() => {
     load()
     loadSold()
+    api.get(`/subscriptions/usage?businessId=${bizId}`).then(({ data }) => setUsage(data)).catch(() => {})
   }, [bizId])
 
   const inStock = products.filter((p) => p.stockQuantity > 0)
@@ -1139,7 +1227,9 @@ function InventorySec({ bizId }: { bizId: number }) {
       <div className="bg-white rounded-2xl border p-6">
         <div className="mb-4">
           <h3 className="text-xl font-bold text-gray-900">Current stock</h3>
-          <p className="text-sm text-gray-500">Set stock levels and change prices. Out-of-stock items are not orderable by users.</p>
+          <p className="text-sm text-gray-500">Set stock levels and change prices. Out-of-stock items are not orderable by users.
+            {usage?.stockLimit != null && <> Your <span className="font-medium">{usage.planName}</span> plan caps stock at <span className="font-medium">{usage.stockLimit} units</span> per product.</>}
+          </p>
         </div>
         <ProductTable products={products} onChanged={load} />
       </div>

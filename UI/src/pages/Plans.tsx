@@ -66,11 +66,11 @@ export default function Plans() {
       <section>
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Simple, Transparent Pricing</h2>
-          <p className="text-gray-500 mt-2">Pick a plan for your year of listing. Base 10 products, Standard 60, Gold unlimited.</p>
+          <p className="text-gray-500 mt-2">Pick a plan for your year of listing. Silver 10 products · 20 stock each, Gold 25 · 40, Platinum unlimited.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(plans.length ? plans : [{ name: 'Base', months: 12, amount: 1500, description: 'list up to 10 products', productLimit: 10 }, { name: 'Standard', months: 12, amount: 2800, description: 'list up to 60 products', productLimit: 60 }, { name: 'Gold', months: 12, amount: 5000, description: 'sell unlimited products', productLimit: null }] as Plan[]).map((p) => {
-            const featured = p.name === 'Standard'
+          {(plans.length ? plans : [{ name: 'Silver', months: 12, amount: 1500, description: 'sell up to 10 products · 20 units of stock each', productLimit: 10, stockLimit: 20 }, { name: 'Gold', months: 12, amount: 2800, description: 'sell up to 25 products · 40 units of stock each', productLimit: 25, stockLimit: 40 }, { name: 'Platinum', months: 12, amount: 5000, description: 'sell unlimited products with unlimited stock', productLimit: null, stockLimit: null }] as Plan[]).map((p) => {
+            const featured = p.name === 'Gold'
             return (
               <div key={p.name} className={`relative bg-white rounded-3xl border-2 p-8 flex flex-col ${featured ? 'border-primary-500 shadow-xl' : 'border-gray-200'}`}>
                 {featured && <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary-600 text-white text-xs font-semibold rounded-full">Most Popular</span>}
@@ -84,6 +84,10 @@ export default function Plans() {
                   <li className="flex items-start gap-2">
                     <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     {p.productLimit == null ? 'Unlimited products for a year' : `List up to ${p.productLimit} products for a year`}
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    {p.stockLimit == null ? 'Unlimited stock can be held per product' : `Up to ${p.stockLimit} units of stock per product`}
                   </li>
                   {['Single-page business profile', 'Directory search & category listing', 'Photo/logo uploads & product showcase', 'Enquiry inbox with notifications', 'WhatsApp share & chat links', 'Business hours & contact details'].map((f) => (
                     <li key={f} className="flex items-start gap-2">
