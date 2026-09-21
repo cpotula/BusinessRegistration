@@ -214,8 +214,10 @@ function BizSec() {
   }
 
   const errMsg = (e: unknown) => {
-    const err = e as { response?: { status?: number }; request?: unknown; message?: string }
+    const err = e as { response?: { status?: number; data?: { message?: string } }; request?: unknown }
     const status = err.response?.status
+    const serverMessage = err.response?.data?.message
+    if (serverMessage) return serverMessage
     if (status === 401) return 'Your login has expired. Log out, then log back in as admin (admin@businessportal.local) and try again.'
     if (status === 403) return 'Only an admin can approve. Log in with the admin account (admin@businessportal.local), then try again.'
     if (status === 404) return 'This business is no longer pending — it was already approved (or removed). The list has been refreshed.'
@@ -237,6 +239,12 @@ function BizSec() {
   }, [q])
 
   const toggleStatus = async (b: AdminBusinessListItem) => {
+    // Activating requires a confirmed (paid) subscription, so a business can
+    // never go live before the admin has recorded the subscription payment.
+    if (!b.isActive && b.subscriptionPaymentStatus !== 'Paid') {
+      flash('err', `Cannot activate "${b.name}" — its subscription has not been paid yet. Record the payment under Subscriptions, then activate.`)
+      return
+    }
     // API expects a raw JSON boolean here
     try {
       await api.put(`/admin/businesses/${b.id}/status`, b.isActive ? false : true, { headers: { 'Content-Type': 'application/json' } })
@@ -247,6 +255,11 @@ function BizSec() {
 
   const approve = async (b: AdminBusinessListItem) => {
     // Approve = activate + publish so it appears on the public website.
+    // Blocked server-side too unless the subscription payment was recorded.
+    if (b.subscriptionPaymentStatus !== 'Paid') {
+      flash('err', `Cannot approve "${b.name}" yet — the subscription payment has not been confirmed. Record it under Subscriptions, then approve.`)
+      return
+    }
     try {
       await api.put(`/admin/businesses/${b.id}/approve`, true, { headers: { 'Content-Type': 'application/json' } })
       fetchBiz()
@@ -313,6 +326,10 @@ function BizSec() {
                       {b.subscriptionExpiresOn ? (
                         <span className={expired ? 'text-red-500 font-medium' : ''}>{new Date(b.subscriptionExpiresOn).toLocaleDateString()}</span>
                       ) : <span className="text-gray-400">No subscription</span>}
+                      {b.subscriptionPlanName && <div className="text-xs text-gray-500">{b.subscriptionPlanName}</div>}
+                      {b.subscriptionPaymentStatus && b.subscriptionPaymentStatus !== 'Paid' && (
+                        <span className="mt-0.5 inline-block text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">Payment pending</span>
+                      )}
                     </td>
                     <td className="px-4 py-3"><span className={b.isActive && !expired ? 'text-green-600' : 'text-red-500'}>{expired ? 'Expired' : b.isActive ? 'Active' : 'Disabled'}</span></td>
                     <td className="px-4 py-3 whitespace-nowrap">

@@ -1,6 +1,7 @@
 using BusinessPortal.API.Data;
 using BusinessPortal.API.DTOs;
 using BusinessPortal.API.Models;
+using BusinessPortal.API.Plans;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -144,6 +145,11 @@ public class BusinessesController : ControllerBase
     [Authorize(Roles = "BusinessOwner")]
     public async Task<IActionResult> Create([FromBody] BusinessCreateRequest request)
     {
+        // Every business must select a subscription plan when it registers.
+        var plan = SubscriptionPlans.Find(request.PlanName);
+        if (plan is null)
+            return BadRequest(new { message = "Please select a subscription plan for your business." });
+
         if (!await _db.Categories.AnyAsync(c => c.Id == request.CategoryId))
             return BadRequest(new { message = "Selected category does not exist." });
 
@@ -179,6 +185,22 @@ public class BusinessesController : ControllerBase
 
         _db.Businesses.Add(business);
         await _db.SaveChangesAsync();
+
+        // The selected plan becomes a pending subscription. The admin activates
+        // it on payment receipt (see SubscriptionsController.RecordPayment),
+        // which also activates the business listing.
+        _db.Subscriptions.Add(new Subscription
+        {
+            BusinessId = business.Id,
+            PlanName = plan.Name,
+            Amount = plan.Amount,
+            PaymentStatus = SubscriptionStatus.Pending,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddMonths(plan.Months),
+            Notes = "Selected at registration - awaiting payment confirmation"
+        });
+        await _db.SaveChangesAsync();
+
         return Ok(business.Id);
     }
 

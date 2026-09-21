@@ -38,6 +38,8 @@ public record AdminBusinessListItemDto(
     bool IsActive,
     bool IsPublished,
     DateTime? SubscriptionExpiresOn,
+    string? SubscriptionPlanName,
+    string? SubscriptionPaymentStatus,
     DateTime CreatedAt);
 
 public record AdminProductListItemDto(

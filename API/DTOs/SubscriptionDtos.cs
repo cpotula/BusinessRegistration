@@ -30,7 +30,7 @@ public record SubscriptionRecordPaymentRequest(
     [MaxLength(100)] string? TransactionRef,
     [MaxLength(500)] string? Notes);
 
-public record PlanDto(string Name, int Months, decimal Amount, string Description, int? ProductLimit);
+public record PlanDto(string Name, int Months, decimal Amount, string Description, int? ProductLimit, int? StockLimit);
 
 public record RenewalRequest(
     int BusinessId,
@@ -39,5 +39,8 @@ public record RenewalRequest(
 public record SubscriptionUsageDto(
     string? PlanName,
     int? ProductLimit,
+    int? StockLimit,
     int ProductCount,
-    int? Remaining);
+    int ProductsOverStock,
+    int? Remaining,
+    bool PaymentConfirmed);

@@ -17,6 +17,7 @@ public record BusinessCreateRequest(
     [MaxLength(500)] string? BusinessHours,
     [MaxLength(500)] string? LogoUrl,
     [MaxLength(500)] string? CoverUrl,
+    [Required, MaxLength(100)] string PlanName = "",
     bool IsPublished = false);
 
 public record BusinessUpdateRequest(
