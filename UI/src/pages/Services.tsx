@@ -2,8 +2,10 @@ import { useState, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import { services, searchServices } from '../data/services'
+import usePageTitle from '../hooks/usePageTitle'
 
 export default function Services() {
+  usePageTitle('Our Services — Enterprise Business Portal')
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const visible = query.trim() ? searchServices(query, 50) : services

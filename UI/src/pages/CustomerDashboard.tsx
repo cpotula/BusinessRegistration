@@ -5,17 +5,26 @@ import { ProductSearchItem } from '../api/types'
 import ProductCard from '../components/ProductCard'
 import MyOrders from './MyOrders'
 import { searchProducts, pctBadgeClass } from '../utils/productSearch'
+import DashboardShell, { NavGroup } from '../components/DashboardShell'
 
 type Tab = 'products' | 'profile' | 'orders'
 
-const TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: 'products', label: 'Products', icon: '🛍️' },
-  { key: 'profile', label: 'Edit Profile', icon: '👤' },
-  { key: 'orders', label: 'My Orders', icon: '📦' },
+const navGroups: NavGroup[] = [
+  {
+    label: 'Shop',
+    items: [{ key: 'products', label: 'Products', icon: 'grid' }],
+  },
+  {
+    label: 'Account',
+    items: [
+      { key: 'orders', label: 'My Orders', icon: 'cart' },
+      { key: 'profile', label: 'Edit Profile', icon: 'user' },
+    ],
+  },
 ]
 
 export default function CustomerDashboard() {
-  const { user, updateProfile } = useAuth()
+  const { user, logout, updateProfile } = useAuth()
   const [tab, setTab] = useState<Tab>('products')
 
   const [products, setProducts] = useState<ProductSearchItem[]>([])
@@ -52,35 +61,28 @@ export default function CustomerDashboard() {
   const searching = query.trim().length > 0
   const matched = searchProducts(products, query)
 
-  const nav = (k: Tab, active: boolean) => (
-    <button
-      key={k}
-      onClick={() => setTab(k)}
-      className={`w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-semibold transition-all ${active ? 'bg-primary-600 text-white shadow-md shadow-primary-200/60' : 'text-gray-600 hover:bg-primary-50/80 hover:text-primary-700'}`}
-    >
-      <span className="text-lg">{TABS.find((t) => t.key === k)!.icon}</span>
-      {TABS.find((t) => t.key === k)!.label}
-    </button>
-  )
-
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-xl shadow-md shadow-primary-200/60">
-          {user?.name?.charAt(0)?.toUpperCase() ?? 'U'}
+    <DashboardShell
+      brand="Customer"
+      brandTagline="My account"
+      active={tab}
+      onSelect={(k) => setTab(k as Tab)}
+      navGroups={navGroups}
+      title={
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-xl text-white shadow-md shadow-primary-200/60">
+            {user?.name?.charAt(0)?.toUpperCase() ?? 'U'}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 leading-tight">My Dashboard</h1>
+            <p className="text-sm text-gray-500">{user?.name} · {user?.email}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">My Dashboard</h1>
-          <p className="text-sm text-gray-500">{user?.name} · {user?.email}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-[230px_1fr] gap-6 items-start">
-        <div className="space-y-2 md:sticky md:top-24">
-          {TABS.map((t) => nav(t.key, tab === t.key))}
-        </div>
-
-        <div className="bg-white rounded-2xl border p-6 min-h-[480px]">
+      }
+      user={{ name: user?.name, email: user?.email, role: 'Customer' }}
+      onLogout={logout}
+    >
+      <div className="bg-white rounded-2xl border p-6 min-h-[480px]">
           {tab === 'products' && (
             <>
               <div className="flex items-end justify-between gap-3 mb-5">
@@ -160,8 +162,7 @@ export default function CustomerDashboard() {
           )}
 
           {tab === 'orders' && <MyOrders />}
-        </div>
       </div>
-    </div>
+    </DashboardShell>
   )
 }

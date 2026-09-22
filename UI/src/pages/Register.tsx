@@ -4,10 +4,12 @@ import { useAuth } from '../auth/AuthContext'
 import OwnerDashboard from './OwnerDashboard'
 import AdminDashboard from './AdminDashboard'
 import { roleHome } from '../components/Layout'
+import usePageTitle from '../hooks/usePageTitle'
 
 type AccountType = 'customer' | 'business'
 
 export default function Register() {
+  usePageTitle('Create Account — Enterprise Business Portal')
   const { user, register } = useAuth()
   const navigate = useNavigate()
   const [accountType, setAccountType] = useState<AccountType>('customer')

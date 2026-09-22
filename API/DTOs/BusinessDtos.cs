@@ -18,6 +18,7 @@ public record BusinessCreateRequest(
     [MaxLength(500)] string? LogoUrl,
     [MaxLength(500)] string? CoverUrl,
     [Required, MaxLength(100)] string PlanName = "",
+    [MaxLength(60)] string Theme = "classic",
     bool IsPublished = false);
 
 public record BusinessUpdateRequest(
@@ -33,7 +34,8 @@ public record BusinessUpdateRequest(
     [MaxLength(500)] string? BusinessHours,
     [MaxLength(500)] string? LogoUrl,
     [MaxLength(500)] string? CoverUrl,
-    bool IsPublished);
+    bool IsPublished,
+    [MaxLength(60)] string Theme = "classic");
 
 public record BusinessSummaryDto(
     int Id,
@@ -43,8 +45,11 @@ public record BusinessSummaryDto(
     string? Description,
     string? City,
     string? LogoUrl,
+    string Theme,
     bool IsActive,
-    DateTime? SubscriptionExpiresOn);
+    DateTime? SubscriptionExpiresOn,
+    string? CoverUrl,
+    double AverageRating);
 
 public record BusinessDetailDto(
     int Id,
@@ -61,6 +66,7 @@ public record BusinessDetailDto(
     string? CoverUrl,
     string? WebsiteUrl,
     string? BusinessHours,
+    string Theme,
     bool IsPublished,
     bool IsActive,
     DateTime? SubscriptionExpiresOn,

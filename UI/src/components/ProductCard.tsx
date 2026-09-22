@@ -13,6 +13,7 @@ export default function ProductCard({
   subtitle,
   rating,
   reviewCount,
+  accent,
 }: {
   to: string
   name: string
@@ -22,11 +23,15 @@ export default function ProductCard({
   subtitle?: string | null
   rating?: number
   reviewCount?: number
+  /** Optional business-theme accent classes for price + title hover. */
+  accent?: { price?: string; titleHover?: string }
 }) {
   const out = (stockQuantity ?? 1) <= 0
   const [imgFailed, setImgFailed] = useState(false)
   const showImage = !!imageUrl && !imgFailed
   const hasReviews = (reviewCount ?? 0) > 0 && (rating ?? 0) > 0
+  const priceCls = accent?.price ?? 'text-primary-700'
+  const titleHoverCls = accent?.titleHover ?? 'group-hover:text-primary-700'
 
   return (
     <Link
@@ -50,7 +55,7 @@ export default function ProductCard({
         )}
       </div>
       <div className="p-3.5">
-        <h3 className="text-sm font-semibold text-gray-800 leading-snug line-clamp-2 min-h-[2.6rem] group-hover:text-primary-700 transition-colors">
+        <h3 className={`text-sm font-semibold text-gray-800 leading-snug line-clamp-2 min-h-[2.6rem] transition-colors ${titleHoverCls}`}>
           {name}
         </h3>
         {subtitle && <p className="text-xs text-gray-400 truncate mt-1">{subtitle}</p>}
@@ -66,7 +71,7 @@ export default function ProductCard({
         )}
         <div className="mt-2.5 flex items-center justify-between gap-2">
           {price != null ? (
-            <p className="text-primary-700 font-extrabold text-lg leading-none tracking-tight">
+            <p className={`${priceCls} font-extrabold text-lg leading-none tracking-tight`}>
               ₹{price.toLocaleString('en-IN')}
             </p>
           ) : (

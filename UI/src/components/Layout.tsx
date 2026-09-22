@@ -65,8 +65,8 @@ export default function Layout() {
   const isBrowser = isGuest || isCustomer
 
   const linkCls = ({ isActive }: { isActive: boolean }) =>
-    `px-3.5 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
-      isActive ? 'bg-primary-600 text-white shadow-sm shadow-primary-200' : 'text-gray-600 hover:text-primary-700 hover:bg-primary-50/80'
+    `px-3.5 py-2 text-sm font-medium rounded-full transition-all duration-200 ${
+      isActive ? 'bg-primary-50 text-primary-700 shadow-sm shadow-primary-100' : 'text-gray-600 hover:text-primary-700 hover:bg-gray-100/80'
     }`
 
   const handleLogout = () => {
@@ -126,13 +126,15 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to={roleHome(user?.role)} className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md shadow-primary-200/50 group-hover:shadow-lg group-hover:shadow-primary-200/60 transition-shadow">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:shadow-primary-500/50 transition-shadow">
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <span className="text-lg font-extrabold tracking-tight text-white bg-gradient-to-br from-primary-500 to-primary-700 px-2 py-0.5 rounded-lg text-sm hidden sm:block">EBP</span>
-              <span className="text-xl font-bold text-gray-900 hidden sm:block">Enterprise Business Portal</span>
+              <span className="hidden sm:block">
+                <span className="block font-display text-lg font-bold leading-tight text-gray-900 tracking-tight">Enterprise Business Portal</span>
+                <span className="block text-[11px] text-gray-400 leading-tight">Local businesses, products &amp; services</span>
+              </span>
             </Link>
 
             {isGuest && (
@@ -174,7 +176,7 @@ export default function Layout() {
               ) : (
                 <>
                   <Link to="/login" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary-700 rounded-xl hover:bg-primary-50/80 transition-all duration-200">Login</Link>
-                  <Link to="/register" className="px-5 py-2 text-sm font-semibold bg-primary-600 text-white rounded-xl hover:bg-primary-700 shadow-sm shadow-primary-200/50 hover:shadow-md transition-all duration-200">Register</Link>
+                  <Link to="/register" className="px-5 py-2 text-sm font-semibold text-white rounded-full bg-gradient-to-r from-primary-600 to-primary-500 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all duration-200">Register</Link>
                 </>
               )}
 
@@ -241,42 +243,93 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="bg-slate-900 border-t border-slate-800 text-slate-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <footer className="bg-slate-950 border-t border-slate-800 text-slate-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
           {isBrowser && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md shadow-primary-900/40">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+              <div className="lg:pr-6">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-900/50">
                     <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
-                  <span className="font-bold text-white">Enterprise Business Portal</span>
+                  <span className="font-display font-bold text-white leading-tight">Enterprise Business Portal</span>
                 </div>
-                <p className="text-sm text-slate-400">Discover local businesses, products and services. Connect directly with business owners.</p>
+                <p className="text-sm text-slate-400 mb-5">Discover local businesses, products and services. Connect directly with business owners near you.</p>
+                <div className="flex items-center gap-2">
+                  {[
+                    ['Facebook', 'M13.5 8.5V6a2 2 0 0 1 2-2h1.5V0h-3A4.5 4.5 0 0 0 9.5 4.5V8.5H6V12h3.5v12H13V12h3l.5-3.5Z'],
+                    ['Instagram', 'M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2Zm0 3.6a6.2 6.2 0 1 0 0 12.4 6.2 6.2 0 0 0 0-12.4Zm0 2.1a4.1 4.1 0 1 1 0 8.2 4.1 4.1 0 0 1 0-8.2Zm6.4-3.7a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8Z'],
+                    ['X', 'M18.9 1.2h3.7l-8.1 9.3L24 22.8h-7.5l-5.9-7.7-6.7 7.7H.2l8.7-9.9L0 1.2h7.7l5.3 7 6-7Zm-1.3 19.4h2L6.6 3.2h-2.2Z'],
+                    ['LinkedIn', 'M4.98 3.5C4.98 4.88 3.87 6 2.5 6S.02 4.88.02 3.5 1.13 1 2.5 1s2.48 1.12 2.48 2.5ZM.24 8h4.52V24H0.24V8Zm7.22 0h4.33v2.19h.06c.6-1.14 2.07-2.34 4.27-2.34 4.56 0 5.4 3 5.4 6.91V24h-4.5v-8.1c0-1.93-.03-4.41-2.69-4.41-2.69 0-3.1 2.1-3.1 4.27V24h-4.5V8Z'],
+                  ].map(([label, d]) => (
+                    <a
+                      key={label}
+                      href="https://example.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      title={label}
+                      className="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 hover:-translate-y-0.5 transition-all"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d={d} /></svg>
+                    </a>
+                  ))}
+                </div>
               </div>
+
               <div>
-                <h3 className="font-semibold text-white mb-3">Quick Links</h3>
-                <ul className="space-y-2 text-sm">
-                  <li><Link to="/directory" className="text-slate-400 hover:text-white transition-colors">Browse Directory</Link></li>
-                  <li><Link to="/plans" className="text-slate-400 hover:text-white transition-colors">Plans &amp; Pricing</Link></li>
-                  <li><Link to="/register" className="text-slate-400 hover:text-white transition-colors">List Your Business</Link></li>
-                  <li><Link to="/login" className="text-slate-400 hover:text-white transition-colors">Login</Link></li>
+                <h3 className="font-display font-semibold text-white mb-4">Explore</h3>
+                <ul className="space-y-2.5 text-sm">
+                  <li><Link to="/directory" className="text-slate-400 hover:text-white transition-colors">Business Directory</Link></li>
+                  <li><Link to="/search" className="text-slate-400 hover:text-white transition-colors">Products &amp; Services</Link></li>
+                  <li><Link to="/services" className="text-slate-400 hover:text-white transition-colors">Our Services</Link></li>
+                  <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">Contact Us</Link></li>
                 </ul>
               </div>
+
               <div>
-                <h3 className="font-semibold text-white mb-3">Connect</h3>
-                <p className="text-sm text-slate-400 mb-4">Join our WhatsApp community for local business updates and recommendations.</p>
-                <a href="https://wa.me/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500 text-white text-sm font-medium rounded-xl hover:bg-green-400 shadow-lg shadow-green-900/20 transition-all hover:-translate-y-0.5">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  WhatsApp Group
-                </a>
+                <h3 className="font-display font-semibold text-white mb-4">For Business</h3>
+                <ul className="space-y-2.5 text-sm">
+                  <li><Link to="/plans" className="text-slate-400 hover:text-white transition-colors">Plans &amp; Pricing</Link></li>
+                  <li><Link to="/register" className="text-slate-400 hover:text-white transition-colors">List Your Business</Link></li>
+                  <li><Link to="/login" className="text-slate-400 hover:text-white transition-colors">Owner Login</Link></li>
+                  <li>
+                    <a href="https://wa.me/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 mt-1 bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-medium rounded-xl hover:bg-green-500/20 transition-colors">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                      WhatsApp Community
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-display font-semibold text-white mb-4">Stay in the loop</h3>
+                <p className="text-sm text-slate-400 mb-4">New businesses and updates, straight to your inbox.</p>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); navigate('/contact') }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="email"
+                    required
+                    placeholder="Your email"
+                    className="flex-1 min-w-0 rounded-xl bg-slate-800/80 border border-slate-700/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent"
+                  />
+                  <button type="submit" className="shrink-0 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white text-sm font-semibold shadow-lg shadow-primary-900/40 hover:from-primary-500 hover:to-primary-400 transition-all">
+                    Join
+                  </button>
+                </form>
               </div>
             </div>
           )}
-          <div className={`${isBrowser ? 'mt-10 pt-8' : ''} border-t border-slate-800 text-center text-sm text-slate-500`}>
-            &copy; {new Date().getFullYear()} Enterprise Business Portal. All rights reserved.
+          <div className={`${isBrowser ? 'mt-12 pt-6' : ''} border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-slate-500`}>
+            <span>&copy; {new Date().getFullYear()} Enterprise Business Portal. All rights reserved.</span>
+            <div className="flex gap-5">
+              <a href="/contact" className="hover:text-slate-300 transition-colors">Privacy</a>
+              <a href="/contact" className="hover:text-slate-300 transition-colors">Terms</a>
+              <a href="/contact" className="hover:text-slate-300 transition-colors">Help</a>
+            </div>
           </div>
         </div>
       </footer>

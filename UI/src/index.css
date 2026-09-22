@@ -27,13 +27,13 @@ body {
 
 /* ===== Text Selection ===== */
 ::selection {
-  background-color: #bfdbfe;
-  color: #1e3a8a;
+  background-color: #d4c9ff;
+  color: #241056;
 }
 
 /* ===== Focus Styles (Accessibility) ===== */
 :focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #6337eb;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -184,7 +184,7 @@ body {
 
 /* ===== Gradient Text ===== */
 .gradient-text {
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  background: linear-gradient(120deg, #6337eb 0%, #9379fc 40%, #f98c08 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

@@ -1,10 +1,12 @@
-import { useEffect, useState, FormEvent } from 'react'
+import { useEffect, useState, FormEvent, ReactNode, CSSProperties } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { BusinessDetail as BusinessDetailType, BusinessSummary, Product } from '../api/types'
 import { whatsappChatLink, shareBusiness, subscriptionState, subscriptionBadge, fmtDate } from '../api/utils'
+import { getTheme, BusinessTheme } from '../themes'
 import ProductCard from '../components/ProductCard'
+import usePageTitle from '../hooks/usePageTitle'
 
 // The public Business Detail Page is the primary product of the platform -
 // the destination reached from search, WhatsApp shares and category browsing.
@@ -27,6 +29,8 @@ export default function BusinessDetailPage() {
   const [myReview, setMyReview] = useState<MyReview | null>(null)
   const [error, setError] = useState('')
   const [shared, setShared] = useState('')
+
+  usePageTitle(business ? `${business.name} — Enterprise Business Portal` : 'Business Page — Enterprise Business Portal')
 
   useEffect(() => {
     let cancelled = false
@@ -105,8 +109,7 @@ export default function BusinessDetailPage() {
   )
   if (!business) return <div className="text-center py-20"><div className="inline-block w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" /></div>
 
-  const COLORS = ['from-blue-500 to-blue-700', 'from-emerald-500 to-emerald-700', 'from-violet-500 to-violet-700', 'from-amber-500 to-amber-700', 'from-rose-500 to-rose-700']
-  const colorIdx = business.name.charCodeAt(0) % COLORS.length
+  const t: BusinessTheme = getTheme(business.theme)
 
   const wa = whatsappChatLink(business.contactWhatsApp ?? business.contactPhone, business.name)
   const sub = subscriptionBadge(subscriptionState(business.subscriptionExpiresOn, business.isActive), business.subscriptionExpiresOn)
@@ -114,8 +117,8 @@ export default function BusinessDetailPage() {
   const canManagePreview = isPreview && !!user && (user.role === 'Admin' || user.role === 'BusinessOwner')
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <Link to="/directory" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary-600 transition-colors">
+    <div className="max-w-5xl mx-auto space-y-8">
+      <Link to="/directory" className={`inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary-600 transition-colors ${t.link}`}>
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
         Back to Directory
       </Link>
@@ -128,14 +131,16 @@ export default function BusinessDetailPage() {
       )}
 
       <article className="card overflow-hidden">
+        {/* Theme accent strip — instant visual identity for this business. */}
+        <div className={`h-1.5 w-full ${t.topBar}`} />
         {business.coverUrl ? (
           <div className="relative h-56 sm:h-72">
             <img src={business.coverUrl} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-transparent" />
           </div>
         ) : (
-          <div className={`relative h-32 bg-gradient-to-br ${COLORS[colorIdx]} opacity-90`}>
-            <div className="absolute inset-0 opacity-10">
+          <div className={`relative h-40 sm:h-56 bg-gradient-to-br ${t.gradient}`}>
+            <div className="absolute inset-0 opacity-15">
               <div className="absolute -top-10 -right-10 w-64 h-64 bg-white rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-72 h-40 bg-white rounded-full blur-3xl" />
             </div>
@@ -147,17 +152,17 @@ export default function BusinessDetailPage() {
               <img
                 src={business.logoUrl}
                 alt={business.name}
-                className={`w-24 h-24 rounded-2xl object-cover shadow-card ring-4 ring-white shrink-0 ${business.coverUrl ? '-mt-16 sm:-mt-20 relative' : ''}`}
+                className={`w-24 h-24 rounded-2xl object-cover shadow-card ring-4 ring-white ${t.logoRing} shrink-0 ${business.coverUrl ? '-mt-16 sm:-mt-20 relative' : ''}`}
               />
             ) : (
-              <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${COLORS[colorIdx]} flex items-center justify-center text-white text-4xl font-bold shadow-card ring-4 ring-white shrink-0 ${business.coverUrl ? '-mt-16 sm:-mt-20 relative' : ''}`}>
+              <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${t.gradient} flex items-center justify-center text-white text-4xl font-bold shadow-card ring-4 ring-white ${t.logoRing} shrink-0 ${business.coverUrl ? '-mt-16 sm:-mt-20 relative' : ''}`}>
                 {business.name.charAt(0)}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold text-gray-900 break-words tracking-tight">{business.name}</h1>
+              <h1 className={`text-3xl font-bold ${t.heading} break-words tracking-tight`} style={{ fontFamily: t.fontHeading }}>{business.name}</h1>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-2">
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-100">{business.categoryName}</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${t.chip}`}>{business.categoryName}</span>
                 {business.averageRating > 0 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-100">
                     <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.363 1.118l1.287 3.958c.3.922-.755 1.688-1.539 1.118l-3.367-2.447a1 1 0 00-1.176 0l-3.367 2.447c-.784.57-1.838-.196-1.539-1.118l1.287-3.958a1 1 0 00-.363-1.118L2.063 9.385c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.958z" /></svg>
@@ -188,7 +193,7 @@ export default function BusinessDetailPage() {
           {/* Prominent contact CTAs: Call / WhatsApp / Email / Website */}
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {business.contactPhone && (
-              <a href={`tel:${business.contactPhone}`} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 transition-colors">
+              <a href={`tel:${business.contactPhone}`} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${t.btnPrimary}`}>
                 📞 Call
               </a>
             )}
@@ -199,22 +204,22 @@ export default function BusinessDetailPage() {
               </a>
             )}
             {business.contactEmail && (
-              <a href={`mailto:${business.contactEmail}`} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors">
+              <a href={`mailto:${business.contactEmail}`} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${t.btnSecondary}`}>
                 ✉️ Email
               </a>
             )}
             {business.websiteUrl && (
-              <a href={business.websiteUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors">
+              <a href={business.websiteUrl} target="_blank" rel="noreferrer" className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${t.btnSecondary}`}>
                 🌐 Website
               </a>
             )}
           </div>
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {(business.address || business.city) && <InfoItem icon="📍" label="Address" value={`${business.address || ''}${business.address && business.city ? ', ' : ''}${business.city || ''}`} />}
-            {business.businessHours && <InfoItem icon="🕒" label="Business Hours" value={business.businessHours} />}
-            {business.contactPhone && <InfoItem icon="📞" label="Phone" value={business.contactPhone} />}
-            {business.contactEmail && <InfoItem icon="✉️" label="Email" value={business.contactEmail} />}
+            {(business.address || business.city) && <InfoItem icon="📍" label="Address" value={`${business.address || ''}${business.address && business.city ? ', ' : ''}${business.city || ''}`} panel={t.panel} />}
+            {business.businessHours && <InfoItem icon="🕒" label="Business Hours" value={business.businessHours} panel={t.panel} />}
+            {business.contactPhone && <InfoItem icon="📞" label="Phone" value={business.contactPhone} panel={t.panel} />}
+            {business.contactEmail && <InfoItem icon="✉️" label="Email" value={business.contactEmail} panel={t.panel} />}
           </div>
         </div>
       </article>
@@ -222,7 +227,9 @@ export default function BusinessDetailPage() {
       {/* Products & Services */}
       {products.length > 0 && (
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Products &amp; Services</h2>
+          <SectionHeading style={{ fontFamily: t.fontHeading }} className={t.heading} accent={t.topBar}>
+            Products &amp; Services
+          </SectionHeading>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
             {products.map((p) => (
               <ProductCard
@@ -234,6 +241,7 @@ export default function BusinessDetailPage() {
                 stockQuantity={p.stockQuantity}
                 rating={p.averageRating}
                 reviewCount={p.reviewCount}
+                accent={{ price: t.price, titleHover: t.titleHover }}
               />
             ))}
           </div>
@@ -243,7 +251,9 @@ export default function BusinessDetailPage() {
       {/* Enquiry & Reviews */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="card p-6 sm:p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-5">Send an Enquiry</h2>
+          <SectionHeading small style={{ fontFamily: t.fontHeading }} className={t.heading} accent={t.topBar}>
+            Send an Enquiry
+          </SectionHeading>
           {enquirySent ? successBox('Your enquiry has been sent!') : (
             <form onSubmit={submitEnquiry} className="space-y-3">
               <input required placeholder="Your name" value={enquiry.name} onChange={(e) => setEnquiry({ ...enquiry, name: e.target.value })} className={inputCls} />
@@ -251,13 +261,15 @@ export default function BusinessDetailPage() {
               <input placeholder="Phone (optional)" value={enquiry.phone} onChange={(e) => setEnquiry({ ...enquiry, phone: e.target.value })} className={inputCls} />
               <textarea required rows={3} placeholder="Your message" value={enquiry.message} onChange={(e) => setEnquiry({ ...enquiry, message: e.target.value })} className={inputCls} />
               {error && <p className="text-red-600 text-sm">{error}</p>}
-              <button type="submit" className="w-full py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors">Send Enquiry</button>
+              <button type="submit" className={`w-full py-3 rounded-xl font-semibold transition-colors ${t.btnPrimary}`}>Send Enquiry</button>
             </form>
           )}
         </div>
 
         <div className="card p-6 sm:p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Customer Reviews</h2>
+          <SectionHeading small style={{ fontFamily: t.fontHeading }} className={t.heading} accent={t.topBar}>
+            Customer Reviews
+          </SectionHeading>
           <div className="text-sm text-gray-500 mb-5">
             {business.averageRating > 0 ? (
               <span><span className="text-2xl font-bold text-gray-900 mr-1">{business.averageRating.toFixed(1)}</span><span className="text-amber-500 mr-2">{'★'.repeat(Math.round(business.averageRating))}</span>{business.testimonials.length} review{business.testimonials.length !== 1 ? 's' : ''}</span>
@@ -268,7 +280,7 @@ export default function BusinessDetailPage() {
 
           {!user && (
             <div className="rounded-xl border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
-              <Link to="/login" className="text-primary-600 font-semibold hover:underline">Sign in</Link> to review this business
+              <Link to="/login" className={`font-semibold hover:underline ${t.link}`}>Sign in</Link> to review this business
             </div>
           )}
 
@@ -304,7 +316,7 @@ export default function BusinessDetailPage() {
                 </div>
                 <textarea rows={3} placeholder="What did you like or dislike about this business?" value={reviewText} onChange={(e) => setReviewText(e.target.value)} className={inputCls} />
                 {error && <p className="text-red-600 text-sm">{error}</p>}
-                <button type="submit" className="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors">Submit Review</button>
+                <button type="submit" className={`w-full py-3 rounded-xl font-semibold transition-colors ${t.btnPrimary}`}>Submit Review</button>
               </form>
             )
           )}
@@ -313,22 +325,22 @@ export default function BusinessDetailPage() {
 
           {business.testimonials.length > 0 && (
             <div className="mt-6">
-              <h3 className="font-semibold text-gray-900 mb-3">All reviews</h3>
+              <h3 className="font-semibold text-gray-900 mb-3" style={{ fontFamily: t.fontHeading }}>All reviews</h3>
               <div className="space-y-3">
-                {business.testimonials.map((t) => (
-                  <div key={t.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50">
+                {business.testimonials.map((tm) => (
+                  <div key={tm.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="font-medium text-sm text-gray-900">{t.customerName}</span>
-                      {t.isVerified && (
+                      <span className="font-medium text-sm text-gray-900">{tm.customerName}</span>
+                      {tm.isVerified && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                           Verified Buyer
                         </span>
                       )}
-                      <span className="text-amber-500 text-sm ml-auto">{'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}</span>
+                      <span className="text-amber-500 text-sm ml-auto">{'★'.repeat(tm.rating)}{'☆'.repeat(5 - tm.rating)}</span>
                     </div>
-                    {t.reviewText && <p className="text-sm text-gray-600 mt-2 leading-relaxed">{t.reviewText}</p>}
-                    <p className="text-xs text-gray-400 mt-2">{fmtDate(t.createdAt)}</p>
+                    {tm.reviewText && <p className="text-sm text-gray-600 mt-2 leading-relaxed">{tm.reviewText}</p>}
+                    <p className="text-xs text-gray-400 mt-2">{fmtDate(tm.createdAt)}</p>
                   </div>
                 ))}
               </div>
@@ -340,15 +352,18 @@ export default function BusinessDetailPage() {
       {/* Related Businesses - keep the visitor discovering */}
       {related.length > 0 && (
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Similar Businesses</h2>
-            <Link to="/directory" className="text-primary-600 font-medium text-sm hover:text-primary-700">Browse all →</Link>
+          <div className="flex items-center justify-between mb-6 gap-4">
+            <SectionHeading flat style={{ fontFamily: t.fontHeading }} className={t.heading} accent={t.topBar}>
+              Similar Businesses
+            </SectionHeading>
+            <Link to="/directory" className={`font-medium text-sm ${t.link}`}>Browse all →</Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {related.map((b) => (
-              <Link key={b.id} to={`/b/${b.slug}`} className="group bg-white rounded-2xl border p-4 hover:border-primary-300 hover:shadow-md transition-all">
-                <h3 className="font-semibold text-gray-900 truncate group-hover:text-primary-700">{b.name}</h3>
-                <p className="text-xs text-primary-600 mt-1">{b.categoryName}</p>
+              <Link key={b.id} to={`/b/${b.slug}`} className="group bg-white rounded-2xl border overflow-hidden p-4 hover:border-primary-300 hover:shadow-md transition-all">
+                <div className={`h-1 w-10 rounded-full mb-3 ${getTheme(b.theme).topBar}`} />
+                <h3 className="font-semibold text-gray-900 truncate">{b.name}</h3>
+                <p className={`text-xs mt-1 ${getTheme(b.theme).link}`}>{b.categoryName}</p>
                 {b.city && <p className="text-xs text-gray-400 mt-1">📍 {b.city}</p>}
               </Link>
             ))}
@@ -363,6 +378,32 @@ export default function BusinessDetailPage() {
 
 const inputCls = 'input-field'
 
+function SectionHeading({
+  children,
+  small,
+  flat,
+  accent,
+  className,
+  style,
+}: {
+  children: ReactNode
+  small?: boolean
+  flat?: boolean
+  accent?: string
+  className?: string
+  style?: CSSProperties
+}) {
+  return (
+    <h2
+      className={`${flat ? '' : small ? 'text-lg sm:text-xl mb-4' : 'text-2xl mb-6'} font-bold flex items-center gap-2.5 ${className ?? 'text-gray-900'}`}
+      style={style}
+    >
+      <span className={`inline-block w-1.5 h-5 rounded-full shrink-0 ${accent ?? 'bg-primary-500'}`} />
+      {children}
+    </h2>
+  )
+}
+
 function successBox(msg: string) {
   return (
     <div className="text-center py-8">
@@ -372,9 +413,9 @@ function successBox(msg: string) {
   )
 }
 
-function InfoItem({ icon, label, value }: { icon: string; label: string; value: string }) {
+function InfoItem({ icon, label, value, panel }: { icon: string; label: string; value: string; panel?: string }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4">
+    <div className={`rounded-xl p-4 ${panel ?? 'bg-gray-50'}`}>
       <p className="text-xs text-gray-400 uppercase font-medium mb-1">{icon} {label}</p>
       <p className="text-sm text-gray-800 break-words">{value}</p>
     </div>

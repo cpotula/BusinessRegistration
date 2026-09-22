@@ -51,6 +51,11 @@ public class Business
     [MaxLength(500)]
     public string? BusinessHours { get; set; }
 
+    // Industry theme applied to this business' public page.
+    // One of: classic | fashion | electronics | food | furniture.
+    [MaxLength(60)]
+    public string Theme { get; set; } = "classic";
+
     public bool IsPublished { get; set; } = false;
 
     public bool IsActive { get; set; } = true;

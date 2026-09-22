@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import DashboardShell, { NavGroup } from '../components/DashboardShell'
 import {
   AdminDashboard as StatsType, Announcement, Category, Enquiry,
   AdminBusinessListItem, AdminProductListItem, ExpiringBusiness, PendingPayment,
@@ -857,46 +858,64 @@ function EnquiriesSec() {
 export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>('overview')
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
 
   useEffect(() => {
     if (!user || user.role !== 'Admin') navigate('/')
   }, [user, navigate])
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'businesses', label: 'Businesses' },
-    { key: 'products', label: 'Products' },
-    { key: 'subscriptions', label: 'Subscriptions' },
-    { key: 'categories', label: 'Categories' },
-    { key: 'users', label: 'Users' },
-    { key: 'moderation', label: 'Moderation' },
-    { key: 'enquiries', label: 'Enquiries' },
-    { key: 'announcements', label: 'Announcements' },
+  const navGroups: NavGroup[] = [
+    {
+      label: 'Operations',
+      items: [
+        { key: 'overview', label: 'Overview', icon: 'grid' },
+        { key: 'businesses', label: 'Businesses', icon: 'store' },
+        { key: 'products', label: 'Products', icon: 'package' },
+        { key: 'subscriptions', label: 'Subscriptions', icon: 'card' },
+      ],
+    },
+    {
+      label: 'Manage',
+      items: [
+        { key: 'categories', label: 'Categories', icon: 'tag' },
+        { key: 'users', label: 'Users', icon: 'user' },
+        { key: 'moderation', label: 'Moderation', icon: 'shield' },
+      ],
+    },
+    {
+      label: 'Engage',
+      items: [
+        { key: 'enquiries', label: 'Enquiries', icon: 'chat' },
+        { key: 'announcements', label: 'Announcements', icon: 'megaphone' },
+      ],
+    },
   ]
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Administration</h1>
-      <div className="flex gap-2 overflow-x-auto mb-6 pb-2">
-        {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium rounded-xl whitespace-nowrap transition-colors ${tab === t.key ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-      <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-        {tab === 'overview' && <Overview onReview={() => setTab('businesses')} onReviewProducts={() => setTab('products')} />}
-        {tab === 'users' && <UsersSec />}
-        {tab === 'businesses' && <BizSec />}
-        {tab === 'products' && <ProdSec />}
-        {tab === 'categories' && <CategoriesSec />}
-        {tab === 'subscriptions' && <SubSec />}
-        {tab === 'moderation' && <ModSec />}
-        {tab === 'enquiries' && <EnquiriesSec />}
-        {tab === 'announcements' && <AnnSec />}
-      </div>
-    </div>
+    <DashboardShell
+      brand="Admin"
+      brandTagline="Operations centre"
+      active={tab}
+      onSelect={(k) => setTab(k as Tab)}
+      navGroups={navGroups}
+      title={
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Administration</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Platform overview and moderation</p>
+        </div>
+      }
+      user={{ name: user?.name, email: user?.email, role: 'Administrator' }}
+      onLogout={logout}
+    >
+      {tab === 'overview' && <Overview onReview={() => setTab('businesses')} onReviewProducts={() => setTab('products')} />}
+      {tab === 'users' && <UsersSec />}
+      {tab === 'businesses' && <BizSec />}
+      {tab === 'products' && <ProdSec />}
+      {tab === 'categories' && <CategoriesSec />}
+      {tab === 'subscriptions' && <SubSec />}
+      {tab === 'moderation' && <ModSec />}
+      {tab === 'enquiries' && <EnquiriesSec />}
+      {tab === 'announcements' && <AnnSec />}
+    </DashboardShell>
   )
 }

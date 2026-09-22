@@ -59,7 +59,8 @@ public class BusinessesController : ControllerBase
             .Take(pageSize)
             .Select(b => new BusinessSummaryDto(
                 b.Id, b.Name, b.Slug, b.Category!.Name, b.Description, b.City,
-                b.LogoUrl, b.IsActive, b.SubscriptionExpiresOn))
+                b.LogoUrl, b.Theme, b.IsActive, b.SubscriptionExpiresOn,
+                b.CoverUrl, b.Testimonials.Count > 0 ? b.Testimonials.Average(t => t.Rating) : 0))
             .ToListAsync();
 
         return Ok(new { items, total, page, pageSize });
@@ -89,7 +90,8 @@ public class BusinessesController : ControllerBase
             .OrderBy(b => b.Id)
             .Select(b => new BusinessSummaryDto(
                 b.Id, b.Name, b.Slug, b.Category!.Name, b.Description, b.City,
-                b.LogoUrl, b.IsActive, b.SubscriptionExpiresOn))
+                b.LogoUrl, b.Theme, b.IsActive, b.SubscriptionExpiresOn,
+                b.CoverUrl, b.Testimonials.Count > 0 ? b.Testimonials.Average(t => t.Rating) : 0))
             .ToListAsync();
         return Ok(businesses);
     }
@@ -135,7 +137,8 @@ public class BusinessesController : ControllerBase
             .Take(4)
             .Select(b => new BusinessSummaryDto(
                 b.Id, b.Name, b.Slug, b.Category!.Name, b.Description, b.City,
-                b.LogoUrl, b.IsActive, b.SubscriptionExpiresOn))
+                b.LogoUrl, b.Theme, b.IsActive, b.SubscriptionExpiresOn,
+                b.CoverUrl, b.Testimonials.Count > 0 ? b.Testimonials.Average(t => t.Rating) : 0))
             .ToListAsync();
 
         return Ok(related);
@@ -176,6 +179,7 @@ public class BusinessesController : ControllerBase
             BusinessHours = request.BusinessHours,
             LogoUrl = request.LogoUrl,
             CoverUrl = request.CoverUrl,
+            Theme = string.IsNullOrWhiteSpace(request.Theme) ? "classic" : request.Theme,
             // A newly created business is NOT shown publicly until an admin
             // approves it. It starts as pending: inactive + unpublished, so it
             // never appears in the public directory on its own.
@@ -238,6 +242,8 @@ public class BusinessesController : ControllerBase
         business.BusinessHours = request.BusinessHours;
         business.LogoUrl = request.LogoUrl;
         business.CoverUrl = request.CoverUrl;
+        if (!string.IsNullOrWhiteSpace(request.Theme))
+            business.Theme = request.Theme;
         business.IsPublished = request.IsPublished;
         business.UpdatedAt = DateTime.UtcNow;
 
@@ -334,6 +340,7 @@ public class BusinessesController : ControllerBase
             business.Description, business.ContactPhone, business.ContactWhatsApp,
             business.ContactEmail, business.Address, business.City, business.LogoUrl,
             business.CoverUrl, business.WebsiteUrl, business.BusinessHours,
+            business.Theme,
             business.IsPublished, business.IsActive, business.SubscriptionExpiresOn,
             Math.Round(averageRating, 1), business.Products.Count,
             approved.Select(t => new TestimonialDto(

@@ -2,8 +2,10 @@ import { useState, FormEvent } from 'react'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { roleHome } from '../components/Layout'
+import usePageTitle from '../hooks/usePageTitle'
 
 export default function Login() {
+  usePageTitle('Login — Enterprise Business Portal')
   const { user, login } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')

@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../cart/CartContext'
 import { useAuth } from '../auth/AuthContext'
 import { api } from '../api/client'
+import usePageTitle from '../hooks/usePageTitle'
 
 function inr(n: number) {
   return `₹${n.toLocaleString('en-IN')}`
 }
 
 export default function CartPage() {
+  usePageTitle('Your Cart — Enterprise Business Portal')
   const { items, count, total, setQty, removeItem, clear } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()

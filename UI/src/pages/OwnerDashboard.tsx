@@ -6,6 +6,9 @@ import { BusinessSummary, BusinessDetail, Category, Enquiry, Product, Subscripti
 import { subscriptionState, subscriptionBadge, daysUntil, fmtDate, completeness } from '../api/utils'
 import OrderStatusBar, { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, ORDER_STATUS_BADGE, OrderStatus } from '../components/OrderStatusBar'
 import SalesByPeriodCard from '../components/SalesByPeriodCard'
+import ThemePicker from '../components/ThemePicker'
+import DashboardShell from '../components/DashboardShell'
+import { getTheme } from '../themes'
 
 type Tab = 'overview' | 'edit' | 'products' | 'inventory' | 'reports' | 'subscription' | 'reviews' | 'enquiries' | 'orders'
 
@@ -13,7 +16,7 @@ const inputCls = 'w-full rounded-xl border border-gray-200 px-4 py-3 text-sm foc
 const labelCls = 'block text-sm font-medium text-gray-700 mb-1'
 
 export default function OwnerDashboard() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const [tab, setTab] = useState<Tab>((params.get('tab') as Tab) || 'overview')
@@ -56,12 +59,46 @@ export default function OwnerDashboard() {
   }, null as number | null)
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
-        <Link to="/plans" className="text-sm font-medium text-primary-600 hover:text-primary-700">View plans &amp; pricing →</Link>
-      </div>
-
+    <DashboardShell
+      brand="Owner Portal"
+      brandTagline="Business dashboard"
+      active={tab}
+      onSelect={(k) => switchTab(k as Tab)}
+      navGroups={[
+        {
+          label: 'Manage',
+          items: [
+            { key: 'overview', label: 'Overview', icon: 'grid' },
+            { key: 'inventory', label: 'Inventory', icon: 'layers' },
+            { key: 'products', label: 'Products & Services', icon: 'package' },
+            { key: 'orders', label: 'Orders', icon: 'cart' },
+            { key: 'reports', label: 'Reports', icon: 'chart' },
+          ],
+        },
+        {
+          label: 'Settings',
+          items: [
+            { key: 'edit', label: 'Edit Page', icon: 'pencil' },
+            { key: 'subscription', label: 'Subscription', icon: 'card' },
+            { key: 'reviews', label: 'Reviews', icon: 'star' },
+            { key: 'enquiries', label: 'Enquiries', icon: 'chat' },
+          ],
+        },
+      ]}
+      title={
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">My Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Manage your businesses, orders and page</p>
+        </div>
+      }
+      headerExtras={
+        <Link to="/plans" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 whitespace-nowrap">
+          View plans &amp; pricing →
+        </Link>
+      }
+      user={{ name: user?.name, email: user?.email, role: 'Business Owner' }}
+      onLogout={logout}
+    >
       {notice !== null && notice <= 14 && (
         <button onClick={() => switchTab('subscription')} className={`w-full text-left mb-6 rounded-2xl border px-5 py-4 text-sm font-medium transition-colors ${notice < 0 ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100' : 'bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100'}`}>
           {notice < 0
@@ -85,38 +122,15 @@ export default function OwnerDashboard() {
 
           {selectedId != null && (
             <>
-              <div className="lg:flex lg:gap-6">
-                <aside className="lg:w-60 shrink-0 mb-4 lg:mb-0">
-                  <div className="card p-2 flex flex-col gap-1">
-                    {([
-                      ['overview', 'Overview'],
-                      ['inventory', 'Inventory'],
-                      ['products', 'Products & Services'],
-                      ['orders', 'Orders'],
-                      ['reports', 'Reports'],
-                      ['edit', 'Edit Page'],
-                      ['subscription', 'Subscription'],
-                      ['reviews', 'Reviews'],
-                      ['enquiries', 'Enquiries'],
-                    ] as [Tab, string][]).map(([t, label]) => (
-                      <button key={t} onClick={() => switchTab(t)} className={`px-3.5 py-2.5 rounded-xl text-sm font-medium text-left transition-all duration-200 ${tab === t ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-md shadow-primary-200/60' : 'text-gray-600 hover:bg-primary-50/70 hover:text-primary-700'}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </aside>
-                <div className="flex-1 min-w-0">
-                  {tab === 'overview' && <OverviewSec bizId={selectedId} summary={businesses.find((b) => b.id === selectedId)} />}
-                  {tab === 'inventory' && <InventorySec bizId={selectedId} />}
-                  {tab === 'products' && <ProductsSec bizId={selectedId} />}
-                  {tab === 'orders' && <OrdersSec />}
-                  {tab === 'reports' && <ReportsSec bizId={selectedId} />}
-                  {tab === 'edit' && <BizEditor key={selectedId} bizId={selectedId} cats={categories} onChanged={async () => { await reload() }} />}
-                  {tab === 'subscription' && <SubSec bizId={selectedId} />}
-                  {tab === 'reviews' && <TestSec bizId={selectedId} />}
-                  {tab === 'enquiries' && <EnqSec />}
-                </div>
-              </div>
+              {tab === 'overview' && <OverviewSec bizId={selectedId} summary={businesses.find((b) => b.id === selectedId)} />}
+              {tab === 'inventory' && <InventorySec bizId={selectedId} />}
+              {tab === 'products' && <ProductsSec bizId={selectedId} />}
+              {tab === 'orders' && <OrdersSec />}
+              {tab === 'reports' && <ReportsSec bizId={selectedId} />}
+              {tab === 'edit' && <BizEditor key={selectedId} bizId={selectedId} cats={categories} onChanged={async () => { await reload() }} />}
+              {tab === 'subscription' && <SubSec bizId={selectedId} />}
+              {tab === 'reviews' && <TestSec bizId={selectedId} />}
+              {tab === 'enquiries' && <EnqSec />}
             </>
           )}
         </>
@@ -133,7 +147,7 @@ export default function OwnerDashboard() {
           }}
         />
       )}
-    </div>
+    </DashboardShell>
   )
 }
 
@@ -277,7 +291,7 @@ interface WizardFields {
   name: string; categoryId: number; description: string
   contactPhone: string; contactWhatsApp: string; contactEmail: string
   address: string; city: string; websiteUrl: string; businessHours: string
-  logoUrl: string; coverUrl: string; planName: string
+  logoUrl: string; coverUrl: string; planName: string; theme: string
 }
 
 function Wizard({ cats, onCreated, onCancel }: { cats: Category[]; onCreated: (id: number) => void; onCancel?: () => void }) {
@@ -289,7 +303,7 @@ function Wizard({ cats, onCreated, onCancel }: { cats: Category[]; onCreated: (i
     name: '', categoryId: cats[0]?.id ?? 1, description: '',
     contactPhone: '', contactWhatsApp: '', contactEmail: '',
     address: '', city: '', websiteUrl: '', businessHours: '',
-    logoUrl: '', coverUrl: '', planName: '',
+    logoUrl: '', coverUrl: '', planName: '', theme: 'classic',
   })
   const set = (patch: Partial<WizardFields>) => setF({ ...f, ...patch })
 
@@ -297,7 +311,7 @@ function Wizard({ cats, onCreated, onCancel }: { cats: Category[]; onCreated: (i
     api.get('/subscriptions/plans').then(({ data }) => setPlans(data)).catch(() => {})
   }, [])
 
-  const steps = ['Basics', 'Contact & Hours', 'Photos', 'Subscription', 'Preview & Publish']
+  const steps = ['Basics', 'Contact & Hours', 'Photos', 'Subscription', 'Theme', 'Preview & Publish']
   const canNext = step === 0 ? f.name.trim().length > 1 : step === 3 ? f.planName !== '' : true
 
   const submit = async (publish: boolean) => {
@@ -401,10 +415,20 @@ function Wizard({ cats, onCreated, onCancel }: { cats: Category[]; onCreated: (i
       )}
 
       {step === 4 && (
+        <div className="space-y-5">
+          <div>
+            <h3 className="font-semibold text-gray-900">Choose a theme for your page</h3>
+            <p className="text-sm text-gray-500 mt-1">Pick an industry look — it styles your public business page (colors, fonts and accents). You can change it anytime.</p>
+          </div>
+          <ThemePicker value={f.theme} onChange={(theme) => set({ theme })} />
+        </div>
+      )}
+
+      {step === 5 && (
         <div className="space-y-4">
           <div className="rounded-2xl border p-5 bg-gray-50">
             <div className="flex items-center gap-4">
-              {f.logoUrl ? <img src={f.logoUrl} className="w-14 h-14 rounded-xl object-cover" alt="" /> : <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center text-xl font-bold">{(f.name || '?').charAt(0)}</div>}
+              {f.logoUrl ? <img src={f.logoUrl} className="w-14 h-14 rounded-xl object-cover" alt="" /> : <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${getTheme(f.theme).gradient} text-white flex items-center justify-center text-xl font-bold`}>{(f.name || '?').charAt(0)}</div>}
               <div>
                 <p className="font-bold text-gray-900">{f.name || 'Your Business'}</p>
                 <p className="text-xs text-primary-600">{cats.find((c) => c.id === f.categoryId)?.name}</p>
@@ -412,6 +436,16 @@ function Wizard({ cats, onCreated, onCancel }: { cats: Category[]; onCreated: (i
               </div>
             </div>
             {f.description && <p className="text-sm text-gray-600 mt-3">{f.description}</p>}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-white border border-gray-200 text-gray-600">
+                <span className={`w-1.5 h-1.5 rounded-full ${getTheme(f.theme).topBar}`} />Theme: {getTheme(f.theme).name}
+              </span>
+              {f.planName && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-primary-100 text-primary-700 text-xs font-medium">
+                  {f.planName} plan selected
+                </span>
+              )}
+            </div>
             {f.planName && (
               <div className="mt-4 rounded-xl border border-primary-100 bg-white p-4">
                 <p className="text-xs font-medium text-gray-500">Subscription plan</p>
@@ -452,7 +486,7 @@ function BizEditor({ bizId, cats, onChanged }: { bizId: number; cats: Category[]
     name: '', categoryId: cats[0]?.id ?? 1, description: '',
     contactPhone: '', contactWhatsApp: '', contactEmail: '',
     address: '', city: '', websiteUrl: '', businessHours: '',
-    logoUrl: '', coverUrl: '', isPublished: true,
+    logoUrl: '', coverUrl: '', theme: 'classic', isPublished: true,
   })
   const [loadedSlug, setLoadedSlug] = useState('')
   const [msg, setMsg] = useState('')
@@ -475,6 +509,7 @@ function BizEditor({ bizId, cats, onChanged }: { bizId: number; cats: Category[]
         businessHours: data.businessHours ?? '',
         logoUrl: data.logoUrl ?? '',
         coverUrl: data.coverUrl ?? '',
+        theme: data.theme ?? 'classic',
         isPublished: data.isPublished,
       })
     })
@@ -525,6 +560,17 @@ function BizEditor({ bizId, cats, onChanged }: { bizId: number; cats: Category[]
 
       <UploadField label="Logo" value={f.logoUrl} onChange={(url) => set({ logoUrl: url })} />
       <UploadField label="Cover photo" value={f.coverUrl} onChange={(url) => set({ coverUrl: url })} />
+
+      <div className="border-t border-dashed border-gray-200 pt-5">
+        <div className="flex items-center justify-between mb-1">
+          <label className="font-semibold text-gray-900">Page theme</label>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-600">
+            <span className={`w-1.5 h-1.5 rounded-full ${getTheme(f.theme).topBar}`} />{getTheme(f.theme).name}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 mb-3">Styles your public page — colors, fonts and accents. Visitors see this instantly.</p>
+        <ThemePicker value={f.theme} onChange={(theme) => set({ theme })} />
+      </div>
 
       {msg && <p className="text-green-700 text-sm bg-green-50 px-4 py-2 rounded-lg">{msg}</p>}
       {err && <p className="text-red-600 text-sm bg-red-50 px-4 py-2 rounded-lg">{err}</p>}

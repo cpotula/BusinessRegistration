@@ -5,6 +5,7 @@ import { ProductDetailInfo, ProductReview, ProductReviewsResult, ReviewEligibili
 import { whatsappChatLink, fmtDate } from '../api/utils'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
+import usePageTitle from '../hooks/usePageTitle'
 
 // Product Details page - reached from the search results page.
 // Shows the product media/description plus its parent business with
@@ -28,6 +29,8 @@ export default function ProductDetailPage() {
   const [reviewText, setReviewText] = useState('')
   const [reviewSent, setReviewSent] = useState(false)
   const [reviewError, setReviewError] = useState('')
+
+  usePageTitle(product ? `${product.name} — Enterprise Business Portal` : 'Product — Enterprise Business Portal')
 
   useEffect(() => {
     api.get(`/products/${id}`)

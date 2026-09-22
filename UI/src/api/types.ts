@@ -12,8 +12,11 @@ export interface BusinessSummary {
   description: string | null
   city: string | null
   logoUrl: string | null
+  theme: string
   isActive: boolean
   subscriptionExpiresOn: string | null
+  coverUrl: string | null
+  averageRating: number
 }
 
 export interface Testimonial {
@@ -40,6 +43,7 @@ export interface BusinessDetail {
   coverUrl: string | null
   websiteUrl: string | null
   businessHours: string | null
+  theme: string
   isPublished: boolean
   isActive: boolean
   subscriptionExpiresOn: string | null

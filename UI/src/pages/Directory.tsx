@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { BusinessSummary, Category } from '../api/types'
 import BusinessCard from '../components/BusinessCard'
+import usePageTitle from '../hooks/usePageTitle'
 
 export default function Directory() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -16,6 +17,8 @@ export default function Directory() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const pageSize = 12
+
+  usePageTitle('Business Directory — Enterprise Business Portal')
 
   useEffect(() => {
     api.get('/categories').then(({ data }) => setCategories(data))
@@ -45,9 +48,21 @@ export default function Directory() {
   return (
     <div>
       <div className="mb-8 animate-fadeIn">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 tracking-tight">Business Directory</h1>
-          <p className="text-gray-500">Discover local businesses, products and services</p>
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary-600 mb-2">
+          <span className="w-8 h-px bg-primary-300" />
+          Explore
+        </p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold text-gray-900 leading-tight tracking-tight">Business Directory</h1>
+            <p className="text-gray-500 mt-1">Discover local businesses, products and services</p>
+          </div>
+          {!loading && businesses.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-50 text-primary-700 text-sm font-semibold border border-primary-100">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+              {total} listing{total !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
       </div>
 
@@ -75,7 +90,7 @@ export default function Directory() {
           <option value="">All locations</option>
           {cities.map((cty) => <option key={cty} value={cty}>{cty}</option>)}
         </select>
-        <button type="submit" className="px-8 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 shadow-md shadow-primary-200/60 hover:shadow-lg transition-all active:scale-[0.98]">
+        <button type="submit" className="px-8 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all active:scale-[0.98]">
           Search
         </button>
       </form>
@@ -93,7 +108,6 @@ export default function Directory() {
         </div>
       ) : (
         <>
-          <p className="text-sm text-gray-500 mb-6">{total} business{total !== 1 ? 'es' : ''} found</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {businesses.map((b) => <BusinessCard key={b.id} business={b} />)}
           </div>

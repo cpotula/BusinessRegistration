@@ -69,6 +69,7 @@ public static class DbSeeder
             Address = "12 MG Road, Central District",
             City = "Hyderabad",
             BusinessHours = "Mon-Sun: 11:00 AM - 11:00 PM",
+            Theme = "food",
             IsPublished = true,
             IsActive = true,
             SubscriptionExpiresOn = DateTime.UtcNow.AddMonths(6)
@@ -87,6 +88,7 @@ public static class DbSeeder
             Address = "45 Banjara Hills Road No 3",
             City = "Hyderabad",
             BusinessHours = "Mon-Sat: 10:00 AM - 9:00 PM, Sun: 11:00 AM - 8:00 PM",
+            Theme = "fashion",
             IsPublished = true,
             IsActive = true,
             SubscriptionExpiresOn = DateTime.UtcNow.AddMonths(3)

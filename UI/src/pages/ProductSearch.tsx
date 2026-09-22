@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { MatchResult, getCatalog, searchProducts, pctBadgeClass } from '../utils/productSearch'
 import ProductCard from '../components/ProductCard'
+import usePageTitle from '../hooks/usePageTitle'
 
 // Search results page - lists every matching product/service, ranked by the
 // client-side fuzzy matcher (same engine as the header/customer search). The
@@ -10,6 +11,7 @@ import ProductCard from '../components/ProductCard'
 export default function ProductSearch() {
   const [params] = useSearchParams()
   const q = params.get('q') ?? ''
+  usePageTitle(q ? `Search: ${q} — Enterprise Business Portal` : 'Product Search — Enterprise Business Portal')
   const [items, setItems] = useState<MatchResult[]>([])
   const [loading, setLoading] = useState(true)
 

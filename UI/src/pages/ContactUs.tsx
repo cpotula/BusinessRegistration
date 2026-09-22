@@ -1,7 +1,9 @@
 import { useState, FormEvent } from 'react'
 import { api } from '../api/client'
+import usePageTitle from '../hooks/usePageTitle'
 
 export default function ContactUs() {
+  usePageTitle('Contact Us — Enterprise Business Portal')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
