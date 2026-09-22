@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
 import { useState, useEffect } from 'react'
@@ -21,6 +21,7 @@ export default function Layout() {
   const { user, logout } = useAuth()
   const { count: cartCount } = useCart()
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifs, setNotifs] = useState<NotificationInfo[]>([])
@@ -63,6 +64,10 @@ export default function Layout() {
   const isAdmin = user?.role === 'Admin'
   const isCustomer = user?.role === 'Customer'
   const isBrowser = isGuest || isCustomer
+
+  // Dashboards render their own shell (sidebar + sticky header), so the public
+  // chrome is skipped there — most notably the dark marketing footer.
+  const isDashboardRoute = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin')
 
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     `px-3.5 py-2 text-sm font-medium rounded-full transition-all duration-200 ${
@@ -244,6 +249,7 @@ export default function Layout() {
       </main>
 
       <footer className="bg-slate-950 border-t border-slate-800 text-slate-300">
+        {!isDashboardRoute && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
           {isBrowser && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -332,6 +338,7 @@ export default function Layout() {
             </div>
           </div>
         </div>
+        )}
       </footer>
     </div>
   )
