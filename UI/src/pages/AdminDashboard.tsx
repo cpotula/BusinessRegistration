@@ -2,7 +2,7 @@ import { useEffect, useState, FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
-import DashboardShell, { NavGroup } from '../components/DashboardShell'
+import DashboardShell, { NavGroup, StatCard, ShellIcon, IconName } from '../components/DashboardShell'
 import {
   AdminDashboard as StatsType, Announcement, Category, Enquiry,
   AdminBusinessListItem, AdminProductListItem, ExpiringBusiness, PendingPayment,
@@ -10,8 +10,18 @@ import {
 
 type Tab = 'overview' | 'users' | 'businesses' | 'products' | 'categories' | 'subscriptions' | 'moderation' | 'announcements' | 'enquiries'
 
-const btn = 'px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-xl disabled:opacity-50'
-const input = 'border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent'
+const btn = 'inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-sm hover:shadow transition-all disabled:opacity-50'
+const btnAmber = 'inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-sm hover:shadow transition-all disabled:opacity-50'
+const input = 'border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-400 transition-all'
+const th = 'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400'
+const actionLink = 'inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700'
+const okBtn = 'inline-flex items-center gap-1 text-sm font-semibold text-green-600 hover:text-green-700'
+const dangerBtn = 'inline-flex items-center gap-1 text-sm font-medium text-red-500 hover:text-red-600'
+const ghostBtn = 'inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-700'
+const greens = 'inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-700 border border-green-100'
+const ambers = 'inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100'
+const grays = 'inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200'
+const reds = 'inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-100'
 
 /* ---------------- Overview: what needs my attention today? ---------------- */
 
@@ -48,31 +58,25 @@ function Overview({ onReview, onReviewProducts }: { onReview?: () => void; onRev
   if (loading) return <p className="text-sm text-gray-500">Loading stats...</p>
   if (!stats) return <p className="text-sm text-red-500">Failed to load dashboard stats.</p>
 
-  const cards = [
-    { label: 'Users', value: stats.totalUsers },
-    { label: 'Businesses', value: stats.totalBusinesses },
-    { label: 'Active Listings', value: stats.activeBusinesses },
-    { label: 'Pending Approvals', value: stats.pendingBusinesses, hot: true },
-    { label: 'Pending Products', value: stats.pendingProducts, hot: true },
-    { label: 'Active Subscriptions', value: stats.activeSubscriptions },
-    { label: 'Expiring ≤30 days', value: stats.expiringSoon },
-    { label: 'Expired Listings', value: stats.expiredListings },
-    { label: 'Pending Reviews', value: stats.pendingTestimonials },
-    { label: 'Unread Enquiries', value: stats.unreadEnquiries },
-    { label: 'Revenue (30d)', value: `₹${stats.monthlyRevenue.toLocaleString()}` },
+  const cards: { label: string; value: string; icon: IconName; tint?: 'green' | 'red' | 'amber' }[] = [
+    { label: 'Users', value: String(stats.totalUsers), icon: 'user' },
+    { label: 'Businesses', value: String(stats.totalBusinesses), icon: 'store' },
+    { label: 'Active Listings', value: String(stats.activeBusinesses), icon: 'check', tint: 'green' },
+    { label: 'Pending Approvals', value: String(stats.pendingBusinesses), icon: 'alert', tint: stats.pendingBusinesses > 0 ? 'amber' : undefined },
+    { label: 'Pending Products', value: String(stats.pendingProducts), icon: 'package', tint: stats.pendingProducts > 0 ? 'amber' : undefined },
+    { label: 'Active Subs', value: String(stats.activeSubscriptions), icon: 'card' },
+    { label: 'Expiring ≤30 days', value: String(stats.expiringSoon), icon: 'clock', tint: stats.expiringSoon > 0 ? 'red' : undefined },
+    { label: 'Expired Listings', value: String(stats.expiredListings), icon: 'alert', tint: stats.expiredListings > 0 ? 'red' : undefined },
+    { label: 'Pending Reviews', value: String(stats.pendingTestimonials), icon: 'star', tint: stats.pendingTestimonials > 0 ? 'amber' : undefined },
+    { label: 'Unread Enquiries', value: String(stats.unreadEnquiries), icon: 'chat', tint: stats.unreadEnquiries > 0 ? 'amber' : undefined },
+    { label: 'Revenue (30d)', value: `₹${stats.monthlyRevenue.toLocaleString()}`, icon: 'coins' },
   ]
 
   return (
     <div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
         {cards.map(c => (
-          <div key={c.label} className={`bg-white rounded-2xl border p-4 ${c.hot ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}>
-            <p className="text-xs text-gray-500">{c.label}</p>
-            <p className={`text-2xl font-bold mt-1 ${
-              c.hot && Number(c.value) > 0 ? 'text-amber-600' :
-              ['Expiring ≤30 days', 'Expired Listings'].includes(c.label!) && Number(c.value) > 0 ? 'text-red-500' : 'text-gray-900'
-            }`}>{c.value}</p>
-          </div>
+          <StatCard key={c.label} label={c.label} value={c.value} icon={c.icon} tint={c.tint} />
         ))}
       </div>
 
@@ -80,32 +84,44 @@ function Overview({ onReview, onReviewProducts }: { onReview?: () => void; onRev
       <h3 className="font-semibold text-gray-900 mb-3">Needs your attention</h3>
 
       {stats.pendingBusinesses > 0 && (
-        <div className="bg-white rounded-2xl border border-amber-200 mb-4 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
-            <div>
-              <p className="text-amber-800 text-sm font-semibold">⏳ {stats.pendingBusinesses} new business{stats.pendingBusinesses === 1 ? '' : 'es'} pending approval</p>
-              <p className="text-xs text-gray-500 mt-0.5">Newly registered businesses stay hidden from the website until you approve them.</p>
+        <div className="card overflow-hidden mb-4">
+          <div className="flex items-center justify-between px-5 py-4 flex-wrap gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <ShellIcon name="alert" className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">{stats.pendingBusinesses} new business{stats.pendingBusinesses === 1 ? '' : 'es'} pending approval</p>
+                <p className="text-xs text-gray-500 mt-0.5">Newly registered businesses stay hidden from the website until you approve them.</p>
+              </div>
             </div>
-            {onReview && <button onClick={onReview} className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl">Review &amp; Approve</button>}
+            {onReview && <button onClick={onReview} className={btnAmber}>Review &amp; Approve</button>}
           </div>
         </div>
       )}
 
       {stats.pendingProducts > 0 && (
-        <div className="bg-white rounded-2xl border border-amber-200 mb-4 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 flex-wrap gap-2">
-            <div>
-              <p className="text-amber-800 text-sm font-semibold">🛍️ {stats.pendingProducts} product{stats.pendingProducts === 1 ? '' : 's'} pending approval</p>
-              <p className="text-xs text-gray-500 mt-0.5">New products stay hidden from the website until you approve them.</p>
+        <div className="card overflow-hidden mb-4">
+          <div className="flex items-center justify-between px-5 py-4 flex-wrap gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <ShellIcon name="package" className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">{stats.pendingProducts} product{stats.pendingProducts === 1 ? '' : 's'} pending approval</p>
+                <p className="text-xs text-gray-500 mt-0.5">New products stay hidden from the website until you approve them.</p>
+              </div>
             </div>
-            {onReviewProducts && <button onClick={onReviewProducts} className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl">Review &amp; Approve</button>}
+            {onReviewProducts && <button onClick={onReviewProducts} className={btnAmber}>Review &amp; Approve</button>}
           </div>
         </div>
       )}
 
       {pendingPayments.length > 0 && (
-        <div className="bg-white rounded-2xl border border-yellow-200 mb-4 overflow-hidden">
-          <p className="px-5 py-3 bg-yellow-50 text-yellow-800 text-sm font-semibold">💰 {pendingPayments.length} renewal request{pendingPayments.length > 1 ? 's' : ''} awaiting payment confirmation</p>
+        <div className="card overflow-hidden mb-4">
+          <p className="px-5 py-3 bg-amber-50/60 border-b border-amber-100 text-amber-800 text-sm font-semibold flex items-center gap-2">
+            <ShellIcon name="coins" className="w-4 h-4" />{pendingPayments.length} renewal request{pendingPayments.length > 1 ? 's' : ''} awaiting payment confirmation
+          </p>
           <div className="divide-y divide-gray-100">
             {pendingPayments.map(p => (
               <div key={p.id} className="flex items-center justify-between px-5 py-3 flex-wrap gap-2">
@@ -121,8 +137,10 @@ function Overview({ onReview, onReviewProducts }: { onReview?: () => void; onRev
       )}
 
       {expiring.length > 0 && (
-        <div className="bg-white rounded-2xl border mb-4 overflow-hidden">
-          <p className="px-5 py-3 bg-orange-50 text-orange-700 text-sm font-semibold">⏳ Expiring within 30 days</p>
+        <div className="card overflow-hidden mb-4">
+          <p className="px-5 py-3 bg-orange-50/70 border-b border-orange-100 text-orange-700 text-sm font-semibold flex items-center gap-2">
+            <ShellIcon name="clock" className="w-4 h-4" />Expiring within 30 days
+          </p>
           <div className="divide-y divide-gray-100">
             {expiring.map(e => (
               <div key={e.id} className="flex items-center justify-between px-5 py-3 flex-wrap gap-2">
@@ -130,7 +148,7 @@ function Overview({ onReview, onReviewProducts }: { onReview?: () => void; onRev
                   <span className="text-sm font-medium text-gray-900">{e.name}</span>
                   <span className="text-xs text-gray-400 ml-2">{e.categoryName}{e.city ? ` · ${e.city}` : ''} · {e.ownerEmail}</span>
                 </div>
-                <span className={`text-xs font-medium px-3 py-1 rounded-full ${e.daysLeft <= 7 ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'}`}>
+                <span className={e.daysLeft <= 7 ? reds : ambers}>
                   {e.daysLeft} day{e.daysLeft === 1 ? '' : 's'} left
                 </span>
               </div>
@@ -140,7 +158,9 @@ function Overview({ onReview, onReviewProducts }: { onReview?: () => void; onRev
       )}
 
       {pendingPayments.length === 0 && expiring.length === 0 && (
-        <p className="text-sm text-green-600 bg-green-50 rounded-2xl px-5 py-4 mb-4">✅ Nothing urgent — subscriptions and payments are healthy.</p>
+        <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-2xl px-5 py-4 mb-4 flex items-center gap-2">
+          <ShellIcon name="check" className="w-4 h-4" /> Nothing urgent — subscriptions and payments are healthy.
+        </p>
       )}
 
       <button onClick={runExpiryCheck} disabled={runningCheck} className={btn}>
@@ -175,14 +195,14 @@ function UsersSec() {
   if (loading) return <p className="text-sm text-gray-500">Loading users...</p>
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto bg-white rounded-2xl border border-gray-100 p-2">
       <table className="w-full text-sm text-left">
-        <thead className="bg-gray-50 text-gray-600"><tr><th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Email</th><th className="px-4 py-3 font-medium">Role</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Actions</th></tr></thead>
-        <tbody className="divide-y divide-gray-200">
+        <thead className="text-gray-400 border-b border-gray-100"><tr><th className={th}>Name</th><th className={th}>Email</th><th className={th}>Role</th><th className={th}>Status</th><th className={th}>Actions</th></tr></thead>
+        <tbody className="divide-y divide-gray-100">
           {users.map(u => (
-            <tr key={u.id}>
-              <td className="px-4 py-3">{u.name}</td>
-              <td className="px-4 py-3">{u.email}</td>
+            <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
+              <td className="px-4 py-3 font-medium text-gray-900">{u.name}</td>
+              <td className="px-4 py-3 text-gray-500">{u.email}</td>
               <td className="px-4 py-3">
                 <select value={u.role} onChange={e => changeRole(u.id, e.target.value)} className={`${input} py-1`}>
                   <option value="BusinessOwner">Business Owner</option>
@@ -190,8 +210,12 @@ function UsersSec() {
                   <option value="Guest">Guest</option>
                 </select>
               </td>
-              <td className="px-4 py-3"><span className={u.isActive ? 'text-green-600' : 'text-red-500'}>{u.isActive ? 'Active' : 'Disabled'}</span></td>
-              <td className="px-4 py-3"><button onClick={() => toggleActive(u)} className="text-sm font-medium text-primary-600 hover:text-primary-700">{u.isActive ? 'Disable' : 'Enable'}</button></td>
+              <td className="px-4 py-3">
+                <span className={u.isActive ? greens : reds}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${u.isActive ? 'bg-green-500' : 'bg-red-500'}`} />{u.isActive ? 'Active' : 'Disabled'}
+                </span>
+              </td>
+              <td className="px-4 py-3"><button onClick={() => toggleActive(u)} className={actionLink}>{u.isActive ? 'Disable' : 'Enable'}</button></td>
             </tr>
           ))}
         </tbody>
@@ -305,10 +329,10 @@ function BizSec() {
         </div>
       )}
       {loading ? <p className="text-sm text-gray-500">Loading businesses...</p> : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto bg-white rounded-2xl border border-gray-100 p-2">
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-600"><tr><th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Category</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3 font-medium">Expires</th><th className="px-4 py-3 font-medium">State</th><th className="px-4 py-3 font-medium">Actions</th></tr></thead>
-            <tbody className="divide-y divide-gray-200">
+            <thead className="text-gray-400 border-b border-gray-100"><tr><th className={th}>Name</th><th className={th}>Category</th><th className={th}>Owner</th><th className={th}>Expires</th><th className={th}>State</th><th className={th}>Actions</th></tr></thead>
+            <tbody className="divide-y divide-gray-100">
               {businesses.map(b => {
                 const expired = b.subscriptionExpiresOn ? new Date(b.subscriptionExpiresOn) < new Date() : false
                 return (
@@ -317,32 +341,34 @@ function BizSec() {
                       <Link to={`/admin/business/${b.id}`} className="font-medium text-gray-900 hover:text-primary-700 hover:underline transition-colors">
                         {b.name}
                       </Link>
-                      {!b.isActive && !b.isPublished && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">Pending</span>}
-                      {b.isActive && b.isPublished && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600">Approved</span>}
-                      {b.isActive && !b.isPublished && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Draft</span>}
+                      <div className="flex gap-1.5 mt-1">
+                        {!b.isActive && !b.isPublished && <span className={ambers}>Pending</span>}
+                        {b.isActive && b.isPublished && <span className={greens}>Approved</span>}
+                        {b.isActive && !b.isPublished && <span className={grays}>Draft</span>}
+                      </div>
                     </td>
-                    <td className="px-4 py-3">{b.categoryName}</td>
-                    <td className="px-4 py-3 text-xs">{b.ownerEmail}</td>
+                    <td className="px-4 py-3 text-gray-600">{b.categoryName}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{b.ownerEmail}</td>
                     <td className="px-4 py-3">
                       {b.subscriptionExpiresOn ? (
-                        <span className={expired ? 'text-red-500 font-medium' : ''}>{new Date(b.subscriptionExpiresOn).toLocaleDateString()}</span>
+                        <span className={expired ? 'text-red-500 font-medium' : 'text-gray-700'}>{new Date(b.subscriptionExpiresOn).toLocaleDateString()}</span>
                       ) : <span className="text-gray-400">No subscription</span>}
-                      {b.subscriptionPlanName && <div className="text-xs text-gray-500">{b.subscriptionPlanName}</div>}
+                      {b.subscriptionPlanName && <div className="text-xs text-gray-500 mt-0.5">{b.subscriptionPlanName}</div>}
                       {b.subscriptionPaymentStatus && b.subscriptionPaymentStatus !== 'Paid' && (
-                        <span className="mt-0.5 inline-block text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">Payment pending</span>
+                        <span className={ambers}>Payment pending</span>
                       )}
                     </td>
-                    <td className="px-4 py-3"><span className={b.isActive && !expired ? 'text-green-600' : 'text-red-500'}>{expired ? 'Expired' : b.isActive ? 'Active' : 'Disabled'}</span></td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3"><span className={b.isActive && !expired ? greens : reds}>{expired ? 'Expired' : b.isActive ? 'Active' : 'Disabled'}</span></td>
+                    <td className="px-4 py-3 whitespace-nowrap space-x-3">
                       {!b.isActive && !b.isPublished ? (
                         <>
-                          <button onClick={() => approve(b)} className="text-sm font-semibold text-green-600 hover:text-green-700 mr-3">✓ Approve</button>
-                          <button onClick={() => reject(b)} className="text-sm font-medium text-red-500 hover:text-red-600">Reject</button>
+                          <button onClick={() => approve(b)} className={okBtn}>Approve</button>
+                          <button onClick={() => reject(b)} className={dangerBtn}>Reject</button>
                         </>
                       ) : (
                         <>
-                          <button onClick={() => toggleStatus(b)} className="text-sm font-medium text-primary-600 hover:text-primary-700 mr-3">{b.isActive ? 'Deactivate' : 'Activate'}</button>
-                          <button onClick={() => togglePublish(b)} className="text-sm font-medium text-gray-500 hover:text-gray-700">{b.isPublished ? 'Unpublish' : 'Publish'}</button>
+                          <button onClick={() => toggleStatus(b)} className={actionLink}>{b.isActive ? 'Deactivate' : 'Activate'}</button>
+                          <button onClick={() => togglePublish(b)} className={ghostBtn}>{b.isPublished ? 'Unpublish' : 'Publish'}</button>
                         </>
                       )}
                     </td>
@@ -428,34 +454,34 @@ function ProdSec() {
         {status === 'pending' && <span className="text-amber-700 font-medium">{visible.length} product{visible.length === 1 ? '' : 's'} waiting for approval — hidden from the website until you approve.</span>}
       </div>
       {loading ? <p className="text-sm text-gray-500">Loading products...</p> : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto bg-white rounded-2xl border border-gray-100 p-2">
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-600"><tr><th className="px-4 py-3 font-medium">Product</th><th className="px-4 py-3 font-medium">Business</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3 font-medium">Price</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Actions</th></tr></thead>
-            <tbody className="divide-y divide-gray-200">
+            <thead className="text-gray-400 border-b border-gray-100"><tr><th className={th}>Product</th><th className={th}>Business</th><th className={th}>Owner</th><th className={th}>Price</th><th className={th}>Status</th><th className={th}>Actions</th></tr></thead>
+            <tbody className="divide-y divide-gray-100">
               {visible.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No products found.</td></tr>}
               {visible.map(p => (
-                <tr key={p.id}>
+                <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      {p.imageUrl ? <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" /> : <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">img</div>}
+                      {p.imageUrl ? <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-100" /> : <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-400 text-xs">img</div>}
                       <span className="font-medium text-gray-900">{p.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">{p.businessName}</td>
-                  <td className="px-4 py-3 text-xs">{p.ownerEmail}</td>
-                  <td className="px-4 py-3">{p.price != null ? `₹${p.price}` : '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{p.businessName}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500">{p.ownerEmail}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">{p.price != null ? `₹${p.price}` : '—'}</td>
                   <td className="px-4 py-3">
                     {p.isApproved
-                      ? <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600">Approved</span>
-                      : <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">Pending</span>}
+                      ? <span className={greens}>Approved</span>
+                      : <span className={ambers}>Pending</span>}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap space-x-3">
                     {p.isApproved ? (
-                      <button onClick={() => reject(p)} className="text-sm font-medium text-red-500 hover:text-red-600">Reject</button>
+                      <button onClick={() => reject(p)} className={dangerBtn}>Reject</button>
                     ) : (
                       <>
-                        <button onClick={() => approve(p)} className="text-sm font-semibold text-green-600 hover:text-green-700 mr-3">✓ Approve</button>
-                        <button onClick={() => reject(p)} className="text-sm font-medium text-red-500 hover:text-red-600">Reject</button>
+                        <button onClick={() => approve(p)} className={okBtn}>Approve</button>
+                        <button onClick={() => reject(p)} className={dangerBtn}>Reject</button>
                       </>
                     )}
                   </td>
@@ -509,19 +535,19 @@ function CategoriesSec() {
       {err && <p className="text-red-600 text-sm mb-3">{err}</p>}
       <div className="space-y-2">
         {cats.map(c => (
-          <div key={c.id} className="bg-white border rounded-xl px-4 py-3 flex items-center justify-between">
+          <div key={c.id} className="card-static px-4 py-3 flex items-center justify-between">
             {editId === c.id ? (
               <>
                 <input value={editName} onChange={e => setEditName(e.target.value)} className={`${input} flex-1 mr-2`} />
-                <button onClick={() => saveEdit(c.id)} className="text-sm font-medium text-primary-600 hover:underline mr-3">Save</button>
+                <button onClick={() => saveEdit(c.id)} className={actionLink + ' mr-3'}>Save</button>
                 <button onClick={() => setEditId(null)} className="text-sm text-gray-400 hover:underline">Cancel</button>
               </>
             ) : (
               <>
-                <span className="text-sm text-gray-900">{c.name} <span className="text-xs text-gray-400 ml-1">/{c.slug}</span></span>
-                <span className="flex gap-3">
-                  <button onClick={() => { setEditId(c.id); setEditName(c.name) }} className="text-sm font-medium text-primary-600 hover:underline">Rename</button>
-                  <button onClick={() => remove(c)} className="text-sm font-medium text-red-500 hover:underline">Delete</button>
+                <span className="text-sm font-medium text-gray-900">{c.name} <span className="text-xs text-gray-400 ml-1">/{c.slug}</span></span>
+                <span className="flex gap-4">
+                  <button onClick={() => { setEditId(c.id); setEditName(c.name) }} className={actionLink}>Rename</button>
+                  <button onClick={() => remove(c)} className={dangerBtn}>Delete</button>
                 </span>
               </>
             )}
@@ -613,29 +639,29 @@ function SubSec() {
         </form>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto bg-white rounded-2xl border border-gray-100 p-2">
         <table className="w-full text-sm text-left">
-          <thead className="bg-gray-50 text-gray-600"><tr><th className="px-4 py-3 font-medium">Business</th><th className="px-4 py-3 font-medium">Plan</th><th className="px-4 py-3 font-medium">Amount</th><th className="px-4 py-3 font-medium">Period</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Actions</th></tr></thead>
-          <tbody className="divide-y divide-gray-200">
+          <thead className="text-gray-400 border-b border-gray-100"><tr><th className={th}>Business</th><th className={th}>Plan</th><th className={th}>Amount</th><th className={th}>Period</th><th className={th}>Status</th><th className={th}>Actions</th></tr></thead>
+          <tbody className="divide-y divide-gray-100">
             {loading ? <tr><td colSpan={6} className="px-4 py-4 text-sm text-gray-500">Loading...</td></tr> : subs.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-4 text-sm text-gray-500">No subscriptions found.</td></tr>
             ) : subs.map(s => (
-              <tr key={s.id}>
-                <td className="px-4 py-3">{s.businessName}</td>
+              <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
+                <td className="px-4 py-3 font-medium text-gray-900">{s.businessName}</td>
                 <td className="px-4 py-3">{s.planName}</td>
-                <td className="px-4 py-3">₹{s.amount.toLocaleString()}</td>
-                <td className="px-4 py-3 text-xs">{new Date(s.startDate).toLocaleDateString()} → {new Date(s.endDate).toLocaleDateString()}</td>
+                <td className="px-4 py-3 font-semibold text-gray-900">₹{s.amount.toLocaleString()}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">{new Date(s.startDate).toLocaleDateString()} → {new Date(s.endDate).toLocaleDateString()}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                    s.paymentStatus === 'Paid' ? 'bg-green-100 text-green-700' :
-                    s.paymentStatus === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                    s.paymentStatus === 'Refunded' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                  <span className={
+                    s.paymentStatus === 'Paid' ? greens :
+                    s.paymentStatus === 'Pending' ? ambers :
+                    s.paymentStatus === 'Refunded' ? grays : grays}>
                     {s.paymentStatus}
                   </span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  {s.paymentStatus !== 'Paid' && <button onClick={() => markPaid(s.id)} className="text-sm font-medium text-green-600 hover:underline mr-3">Mark Paid</button>}
-                  <button onClick={() => del(s.id)} className="text-sm font-medium text-red-500 hover:underline">Delete</button>
+                <td className="px-4 py-3 whitespace-nowrap space-x-3">
+                  {s.paymentStatus !== 'Paid' && <button onClick={() => markPaid(s.id)} className={okBtn}>Mark Paid</button>}
+                  <button onClick={() => del(s.id)} className={dangerBtn}>Delete</button>
                 </td>
               </tr>
             ))}
@@ -703,13 +729,13 @@ function ModSec() {
                   <p className="text-xs text-gray-500">{t.businessName} · <span className="text-amber-500">{'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}</span></p>
                   {t.reviewText && <p className="text-sm text-gray-700 mt-2">{t.reviewText}</p>}
                 </div>
-                <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${t.isApproved ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>
+                <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${t.isApproved ? greens : ambers}`}>
                   {t.isApproved ? 'Approved' : 'Pending'}
                 </span>
               </div>
               <div className="flex gap-3 mt-3">
-                <button onClick={() => toggleApprove(t)} className="text-sm font-medium text-primary-600 hover:text-primary-700">{t.isApproved ? 'Revoke approval' : 'Approve'}</button>
-                <button onClick={() => remove(t.id)} className="text-sm font-medium text-red-500 hover:text-red-600">Delete</button>
+                <button onClick={() => toggleApprove(t)} className={actionLink}>{t.isApproved ? 'Revoke approval' : 'Approve'}</button>
+                <button onClick={() => remove(t.id)} className={dangerBtn}>Delete</button>
               </div>
             </div>
           ))}
@@ -729,7 +755,7 @@ function ModSec() {
                   <p className="text-xs text-gray-500">{r.businessName} · <span className="text-amber-500">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span></p>
                   {r.reviewText && <p className="text-sm text-gray-700 mt-2">{r.reviewText}</p>}
                 </div>
-                <span className="text-xs font-medium px-2 py-1 rounded-full shrink-0 bg-green-50 text-green-600">Posted</span>
+                <span className={greens}>Posted</span>
               </div>
               <div className="flex gap-3 mt-3">
                 <button onClick={() => removeProduct(r.id)} className="text-sm font-medium text-red-500 hover:text-red-600">Delete</button>
@@ -823,27 +849,27 @@ function EnquiriesSec() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => setFilter('all')} className={`px-3 py-1.5 text-sm font-medium rounded-xl transition-colors ${filter === 'all' ? 'bg-primary-100 text-primary-700' : 'text-gray-500 hover:bg-gray-100'}`}>All ({enquiries.length})</button>
-        <button onClick={() => setFilter('unread')} className={`px-3 py-1.5 text-sm font-medium rounded-xl transition-colors ${filter === 'unread' ? 'bg-primary-100 text-primary-700' : 'text-gray-500 hover:bg-gray-100'}`}>Unread ({unreadCount})</button>
+        <button onClick={() => setFilter('all')} className={`px-3.5 py-1.5 text-sm font-medium rounded-xl transition-all ${filter === 'all' ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-md shadow-primary-500/25' : 'text-gray-500 hover:bg-slate-100'}`}>All ({enquiries.length})</button>
+        <button onClick={() => setFilter('unread')} className={`px-3.5 py-1.5 text-sm font-medium rounded-xl transition-all ${filter === 'unread' ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-md shadow-primary-500/25' : 'text-gray-500 hover:bg-slate-100'}`}>Unread ({unreadCount})</button>
       </div>
 
       {enquiries.length === 0 ? <p className="text-sm text-gray-500">No enquiries found.</p> : (
         <div className="space-y-3">
           {enquiries.map(e => (
-            <div key={e.id} className={`border rounded-2xl p-4 transition-colors ${e.isRead ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'}`}>
+            <div key={e.id} className={`border rounded-2xl p-4 transition-colors ${e.isRead ? 'bg-white border-gray-100' : 'bg-primary-50/50 border-primary-100'}`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-sm text-gray-900">{e.name}</span>
                     <span className="text-xs text-gray-400">{e.email}</span>
                     {e.phone && <span className="text-xs text-gray-400">· {e.phone}</span>}
-                    {!e.isRead && <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
+                    {!e.isRead && <span className="w-2 h-2 rounded-full bg-primary-500 shrink-0" />}
                   </div>
                   <p className="text-xs text-primary-600 mt-0.5">{e.businessName}</p>
                   <p className="text-sm text-gray-700 mt-2 whitespace-pre-line">{e.message}</p>
                   <p className="text-xs text-gray-400 mt-2">{new Date(e.createdAt).toLocaleString()}</p>
                 </div>
-                {!e.isRead && <button onClick={() => markRead(e.id)} className="text-xs font-medium text-primary-600 hover:text-primary-700 whitespace-nowrap shrink-0">Mark read</button>}
+                {!e.isRead && <button onClick={() => markRead(e.id)} className={actionLink + ' whitespace-nowrap shrink-0'}>Mark read</button>}
               </div>
             </div>
           ))}
@@ -900,7 +926,7 @@ export default function AdminDashboard() {
       navGroups={navGroups}
       title={
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Administration</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 leading-tight tracking-tight">Administration</h1>
           <p className="text-sm text-gray-500 mt-0.5">Platform overview and moderation</p>
         </div>
       }

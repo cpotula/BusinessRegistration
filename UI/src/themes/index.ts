@@ -42,10 +42,10 @@ export interface BusinessTheme {
 
 const classic: BusinessTheme = {
   key: 'classic',
-  name: 'Classic Blue',
-  blurb: 'Clean corporate blue — the portal default look.',
-  swatch: ['#2563eb', '#60a5fa', '#dbeafe'],
-  accent: '#2563eb',
+  name: 'Classic',
+  blurb: 'Clean violet — the portal default look.',
+  swatch: ['#6337eb', '#a78bfa', '#ede9fe'],
+  accent: '#6337eb',
   fontHeading: "'Inter', system-ui, sans-serif",
   heading: 'text-gray-900',
   btnPrimary: 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm hover:shadow-md',

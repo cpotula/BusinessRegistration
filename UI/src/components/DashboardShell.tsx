@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 
-export type IconName = 'grid' | 'home' | 'layers' | 'package' | 'tag' | 'cart' | 'chart' | 'pencil' | 'card' | 'star' | 'chat' | 'store' | 'user' | 'shield' | 'megaphone' | 'logout'
+export type IconName = 'grid' | 'home' | 'layers' | 'package' | 'tag' | 'cart' | 'chart' | 'pencil' | 'card' | 'star' | 'chat' | 'store' | 'user' | 'shield' | 'megaphone' | 'logout' | 'alert' | 'fire' | 'coins' | 'calendar' | 'clock' | 'check' | 'phone' | 'mail' | 'globe' | 'pin' | 'plus' | 'boxes'
 
 export interface ShellUser {
   name?: string | null
@@ -34,7 +34,7 @@ interface DashboardShellProps {
   children: ReactNode
 }
 
-function ShellIcon({ name, className }: { name: IconName; className?: string }) {
+export function ShellIcon({ name, className }: { name: IconName; className?: string }) {
   const common = {
     width: 20,
     height: 20,
@@ -69,6 +69,12 @@ function ShellIcon({ name, className }: { name: IconName; className?: string }) 
       return (
         <svg {...common}>
           <path d="M20.5 7.27v9.46a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4a2 2 0 0 1-1-1.73V7.27a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4a2 2 0 0 1 1 1.73Z" /><polyline points="2.8 7.7 12 12.9 21.2 7.7" /><line x1="12" y1="22" x2="12" y2="12" />
+        </svg>
+      )
+    case 'boxes':
+      return (
+        <svg {...common}>
+          <path d="M21 8.5v7L12 20l-9-4.5v-7L12 4l9 4.5Z" /><path d="M12 12 3 7.5M12 12l9-4.5M12 12v8" /><path d="M7.5 4.5 16.5 9" />
         </svg>
       )
     case 'tag':
@@ -143,6 +149,72 @@ function ShellIcon({ name, className }: { name: IconName; className?: string }) 
           <path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9" /><polyline points="15.5 16.5 20 12 15.5 7.5" /><line x1="20" y1="12" x2="9.5" y2="12" />
         </svg>
       )
+    case 'alert':
+      return (
+        <svg {...common}>
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      )
+    case 'fire':
+      return (
+        <svg {...common}>
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z" />
+        </svg>
+      )
+    case 'coins':
+      return (
+        <svg {...common}>
+          <circle cx="8" cy="8" r="5.5" /><circle cx="16" cy="16" r="5.5" /><path d="M5.5 5.5 7 7M13 13l1.5 1.5" />
+        </svg>
+      )
+    case 'calendar':
+      return (
+        <svg {...common}>
+          <rect x="3" y="4.5" width="18" height="17" rx="2" /><line x1="3" y1="9.5" x2="21" y2="9.5" /><line x1="8" y1="2.5" x2="8" y2="6.5" /><line x1="16" y1="2.5" x2="16" y2="6.5" />
+        </svg>
+      )
+    case 'clock':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" />
+        </svg>
+      )
+    case 'check':
+      return (
+        <svg {...common}>
+          <path d="M3 12.5 8.5 18 21 6" />
+        </svg>
+      )
+    case 'phone':
+      return (
+        <svg {...common}>
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z" />
+        </svg>
+      )
+    case 'mail':
+      return (
+        <svg {...common}>
+          <rect x="2.5" y="4.5" width="19" height="15" rx="2" /><path d="m22 7-10 6L2 7" />
+        </svg>
+      )
+    case 'globe':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a12.9 12.9 0 0 1 0 18 12.9 12.9 0 0 1 0-18Z" />
+        </svg>
+      )
+    case 'pin':
+      return (
+        <svg {...common}>
+          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />
+        </svg>
+      )
+    case 'plus':
+      return (
+        <svg {...common}>
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      )
   }
 }
 
@@ -151,8 +223,8 @@ function SidebarNavItem({ item, active, onSelect }: { item: NavItem; active: boo
     <button
       onClick={() => onSelect(item.key)}
       className={`group flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-sm font-medium text-left transition-all duration-200 ${active
-        ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-900/40'
-        : 'text-slate-400 hover:bg-slate-800/70 hover:text-white'}`}
+        ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-500/25'
+        : 'text-slate-500 hover:bg-primary-50/70 hover:text-primary-700'}`}
     >
       {item.icon && <ShellIcon name={item.icon} className="w-5 h-5 shrink-0" />}
       <span className="flex-1 min-w-0 truncate">{item.label}</span>
@@ -164,12 +236,12 @@ function SidebarNavItem({ item, active, onSelect }: { item: NavItem; active: boo
 function MobileNavBar({ navGroups, active, onSelect }: { navGroups: NavGroup[]; active: string; onSelect: (key: string) => void }) {
   const flat = navGroups.flatMap((g) => g.items)
   return (
-    <nav className="flex gap-1.5 overflow-x-auto px-4 sm:px-6 py-2.5 border-t border-slate-200/70">
+    <nav className="flex gap-1.5 overflow-x-auto px-4 sm:px-6 py-2.5 border-t border-gray-100 bg-white/80">
       {flat.map((item) => (
         <button
           key={item.key}
           onClick={() => onSelect(item.key)}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${active === item.key ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${active === item.key ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-md shadow-primary-500/25' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
         >
           {item.icon && <ShellIcon name={item.icon} className="w-4 h-4" />}
           {item.label}
@@ -197,14 +269,14 @@ export default function DashboardShell({
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-72 flex-col bg-slate-900 overflow-y-auto">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-72 flex-col bg-white border-r border-gray-100 overflow-y-auto">
         <div className="flex items-center gap-3 px-5 pt-6 pb-5">
-          <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center font-bold text-white shadow-lg shadow-primary-900/40">
+          <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center font-bold text-white shadow-lg shadow-primary-500/30">
             {brand.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="text-white font-bold leading-tight truncate">{brand}</p>
-            {brandTagline && <p className="text-[11px] text-slate-500 leading-tight truncate">{brandTagline}</p>}
+            <p className="text-gray-900 font-bold leading-tight truncate">{brand}</p>
+            {brandTagline && <p className="text-[11px] text-slate-400 leading-tight truncate">{brandTagline}</p>}
           </div>
         </div>
 
@@ -212,7 +284,7 @@ export default function DashboardShell({
           {navGroups.map((group, gi) => (
             <div key={gi}>
               {group.label && (
-                <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{group.label}</p>
+                <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{group.label}</p>
               )}
               <div className="flex flex-col gap-1">
                 {group.items.map((item) => (
@@ -223,18 +295,18 @@ export default function DashboardShell({
           ))}
         </nav>
 
-        <div className="px-4 py-4 border-t border-slate-800 space-y-3">
-          <div className="flex items-center gap-3 rounded-2xl bg-slate-800/70 border border-slate-700/60 p-3">
-            <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-primary-500 to-slate-700 flex items-center justify-center text-sm font-bold text-white">
+        <div className="px-4 py-4 border-t border-gray-100 space-y-3">
+          <div className="flex items-center gap-3 rounded-2xl bg-slate-50 border border-gray-100 p-3">
+            <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-sm font-bold text-white shadow-md shadow-primary-500/25">
               {initial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white truncate">{user?.name || 'Guest'}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">{user?.name || 'Guest'}</p>
               <p className="text-[11px] text-slate-400 truncate">{user?.role || user?.email}</p>
             </div>
           </div>
           {onLogout && (
-            <button onClick={onLogout} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-800/70 hover:text-white transition-colors">
+            <button onClick={onLogout} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors">
               <ShellIcon name="logout" className="w-5 h-5" />
               Sign out
             </button>
@@ -244,15 +316,15 @@ export default function DashboardShell({
 
       <div className="lg:pl-72">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-slate-50/85 backdrop-blur border-b border-slate-200/70">
-          <div className="lg:hidden flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-slate-200/70">
+        <header className="sticky top-0 z-30 bg-white/85 backdrop-blur border-b border-gray-100">
+          <div className="lg:hidden flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-gray-100 bg-white">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-xs font-bold text-white">
                 {brand.charAt(0).toUpperCase()}
               </div>
-              <span className="text-sm font-bold text-slate-900">{brand}</span>
+              <span className="text-sm font-bold text-gray-900">{brand}</span>
             </div>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-slate-700 flex items-center justify-center text-xs font-bold text-white">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-xs font-bold text-white">
               {initial}
             </div>
           </div>
@@ -274,6 +346,47 @@ export default function DashboardShell({
         <main className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
           <div className="animate-fadeIn">{children}</div>
         </main>
+      </div>
+    </div>
+  )
+}
+
+/* ---------- Shared stat card (used by owner + admin dashboards) ---------- */
+
+export function StatCard({
+  label,
+  value,
+  tint,
+  icon,
+  hint,
+}: {
+  label: string
+  value: string
+  tint?: 'green' | 'red' | 'amber'
+  icon?: IconName
+  hint?: string
+}) {
+  const palette = tint === 'green'
+    ? { glow: 'bg-emerald-200/50', chip: 'from-emerald-500 to-emerald-600', value: 'text-emerald-600', chipShadow: 'shadow-emerald-200/60' }
+    : tint === 'red'
+      ? { glow: 'bg-red-200/50', chip: 'from-red-500 to-red-600', value: 'text-red-500', chipShadow: 'shadow-red-200/60' }
+      : tint === 'amber'
+        ? { glow: 'bg-amber-200/50', chip: 'from-amber-500 to-orange-600', value: 'text-amber-600', chipShadow: 'shadow-amber-200/60' }
+        : { glow: 'bg-primary-200/50', chip: 'from-primary-500 to-primary-700', value: 'text-gray-900', chipShadow: 'shadow-primary-200/60' }
+  return (
+    <div className="card-static p-5 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+      <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl ${palette.glow}`} />
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
+          <p className={`text-2xl font-extrabold mt-1.5 tracking-tight truncate ${palette.value}`}>{value}</p>
+          {hint && <p className="text-[11px] text-gray-400 mt-0.5">{hint}</p>}
+        </div>
+        {icon && (
+          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${palette.chip} flex items-center justify-center text-white shadow-md ${palette.chipShadow} shrink-0`}>
+            <ShellIcon name={icon} className="w-5 h-5" />
+          </div>
+        )}
       </div>
     </div>
   )

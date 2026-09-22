@@ -175,8 +175,8 @@ export default function BusinessDetailPage() {
                 </span>
                 {business.city && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-100">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    {business.city}
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                  {business.city}
                   </span>
                 )}
                 <span className="text-xs text-gray-400">{business.productCount} product{business.productCount !== 1 ? 's' : ''}</span>
@@ -193,33 +193,36 @@ export default function BusinessDetailPage() {
           {/* Prominent contact CTAs: Call / WhatsApp / Email / Website */}
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {business.contactPhone && (
-              <a href={`tel:${business.contactPhone}`} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${t.btnPrimary}`}>
-                📞 Call
+              <a href={`tel:${business.contactPhone}`} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] ${t.btnPrimary}`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
+                Call
               </a>
             )}
             {wa && (
-              <a href={wa} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition-colors">
+              <a href={wa} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition-all active:scale-[0.98] shadow-md shadow-green-200/60">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.463 3.5 11.816 11.816 0 0012.05 0zm5.422 17.382c-.23.636-1.334 1.216-1.838 1.264-.504.048-.963.096-2.754-.572-2.08-.792-3.43-2.904-3.535-3.039-.105-.135-.862-1.144-.862-2.183 0-1.039.552-1.55.744-1.76.192-.21.414-.262.552-.262.144 0 .288.006.414.012.132.006.31-.05.486.37.18.43.618 1.512.672 1.62.054.108.09.234.018.372-.072.138-.144.24-.288.39-.144.15-.302.334-.432.448-.144.126-.294.262-.126.53.168.267.756 1.217 1.608 1.958 1.104.96 2.028 1.26 2.316 1.404.288.144.456.12.624-.072.168-.192.72-.828.912-1.11.192-.288.384-.24.642-.144.258.096 1.638.774 1.92.912.282.138.468.21.534.324.066.114.066.66-.164 1.296z"/></svg>
                 WhatsApp
               </a>
             )}
             {business.contactEmail && (
-              <a href={`mailto:${business.contactEmail}`} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${t.btnSecondary}`}>
-                ✉️ Email
+              <a href={`mailto:${business.contactEmail}`} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] ${t.btnSecondary}`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><rect x="2.5" y="4.5" width="19" height="15" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" d="m22 7-10 6L2 7" /></svg>
+                Email
               </a>
             )}
             {business.websiteUrl && (
-              <a href={business.websiteUrl} target="_blank" rel="noreferrer" className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${t.btnSecondary}`}>
-                🌐 Website
+              <a href={business.websiteUrl} target="_blank" rel="noreferrer" className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] ${t.btnSecondary}`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M12 3a12.9 12.9 0 0 1 0 18 12.9 12.9 0 0 1 0-18Z" /></svg>
+                Website
               </a>
             )}
           </div>
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {(business.address || business.city) && <InfoItem icon="📍" label="Address" value={`${business.address || ''}${business.address && business.city ? ', ' : ''}${business.city || ''}`} panel={t.panel} />}
-            {business.businessHours && <InfoItem icon="🕒" label="Business Hours" value={business.businessHours} panel={t.panel} />}
-            {business.contactPhone && <InfoItem icon="📞" label="Phone" value={business.contactPhone} panel={t.panel} />}
-            {business.contactEmail && <InfoItem icon="✉️" label="Email" value={business.contactEmail} panel={t.panel} />}
+            {(business.address || business.city) && <InfoItem icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>} label="Address" value={`${business.address || ''}${business.address && business.city ? ', ' : ''}${business.city || ''}`} panel={t.panel} />}
+            {business.businessHours && <InfoItem icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3.5 2" /></svg>} label="Business Hours" value={business.businessHours} panel={t.panel} />}
+            {business.contactPhone && <InfoItem icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>} label="Phone" value={business.contactPhone} panel={t.panel} />}
+            {business.contactEmail && <InfoItem icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><rect x="2.5" y="4.5" width="19" height="15" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" d="m22 7-10 6L2 7" /></svg>} label="Email" value={business.contactEmail} panel={t.panel} />}
           </div>
         </div>
       </article>
@@ -364,7 +367,7 @@ export default function BusinessDetailPage() {
                 <div className={`h-1 w-10 rounded-full mb-3 ${getTheme(b.theme).topBar}`} />
                 <h3 className="font-semibold text-gray-900 truncate">{b.name}</h3>
                 <p className={`text-xs mt-1 ${getTheme(b.theme).link}`}>{b.categoryName}</p>
-                {b.city && <p className="text-xs text-gray-400 mt-1">📍 {b.city}</p>}
+                {b.city && <p className="text-xs text-gray-400 mt-1 flex items-center gap-1"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>{b.city}</p>}
               </Link>
             ))}
           </div>
@@ -413,10 +416,10 @@ function successBox(msg: string) {
   )
 }
 
-function InfoItem({ icon, label, value, panel }: { icon: string; label: string; value: string; panel?: string }) {
+function InfoItem({ icon, label, value, panel }: { icon: ReactNode; label: string; value: string; panel?: string }) {
   return (
     <div className={`rounded-xl p-4 ${panel ?? 'bg-gray-50'}`}>
-      <p className="text-xs text-gray-400 uppercase font-medium mb-1">{icon} {label}</p>
+      <p className="text-xs text-gray-500 uppercase font-semibold tracking-wide flex items-center gap-1.5 mb-1">{icon} {label}</p>
       <p className="text-sm text-gray-800 break-words">{value}</p>
     </div>
   )

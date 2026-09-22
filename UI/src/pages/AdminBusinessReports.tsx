@@ -108,17 +108,17 @@ export default function AdminBusinessReports() {
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total products" value={String(products.length)} icon="📦" />
-            <StatCard label="In stock" value={String(inStock.length)} tint="green" icon="✅" />
-            <StatCard label="Out of stock" value={String(outOfStock.length)} tint="red" icon="⚠️" />
-            <StatCard label="Stock value" value={`₹${value.toLocaleString('en-IN')}`} icon="💰" />
+            <StatCard label="Total products" value={String(products.length)} icon="package" />
+            <StatCard label="In stock" value={String(inStock.length)} tint="green" icon="shield" />
+            <StatCard label="Out of stock" value={String(outOfStock.length)} tint="red" icon="alert" />
+            <StatCard label="Stock value" value={`₹${value.toLocaleString('en-IN')}`} icon="coins" />
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Sold today" value={String(sold?.soldToday ?? 0)} icon="🛒" />
-            <StatCard label="Sold this month" value={String(sold?.soldThisMonth ?? 0)} tint="green" icon="📈" />
-            <StatCard label="Sales this month" value={`₹${(sold?.revenueThisMonth ?? 0).toLocaleString('en-IN')}`} icon="💵" />
-            <StatCard label="Sales this year" value={`₹${(sold?.revenueThisYear ?? 0).toLocaleString('en-IN')}`} icon="🏆" />
+            <StatCard label="Sold today" value={String(sold?.soldToday ?? 0)} icon="cart" />
+            <StatCard label="Sold this month" value={String(sold?.soldThisMonth ?? 0)} tint="green" icon="chart" />
+            <StatCard label="Sales this month" value={`₹${(sold?.revenueThisMonth ?? 0).toLocaleString('en-IN')}`} icon="coins" />
+            <StatCard label="Sales this year" value={`₹${(sold?.revenueThisYear ?? 0).toLocaleString('en-IN')}`} icon="star" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

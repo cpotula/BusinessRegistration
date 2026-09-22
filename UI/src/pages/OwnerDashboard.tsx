@@ -7,8 +7,10 @@ import { subscriptionState, subscriptionBadge, daysUntil, fmtDate, completeness 
 import OrderStatusBar, { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, ORDER_STATUS_BADGE, OrderStatus } from '../components/OrderStatusBar'
 import SalesByPeriodCard from '../components/SalesByPeriodCard'
 import ThemePicker from '../components/ThemePicker'
-import DashboardShell from '../components/DashboardShell'
+import DashboardShell, { StatCard } from '../components/DashboardShell'
 import { getTheme } from '../themes'
+
+export { StatCard }
 
 type Tab = 'overview' | 'edit' | 'products' | 'inventory' | 'reports' | 'subscription' | 'reviews' | 'enquiries' | 'orders'
 
@@ -87,7 +89,7 @@ export default function OwnerDashboard() {
       ]}
       title={
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">My Dashboard</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 leading-tight tracking-tight">My Dashboard</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage your businesses, orders and page</p>
         </div>
       }
@@ -100,11 +102,12 @@ export default function OwnerDashboard() {
       onLogout={logout}
     >
       {notice !== null && notice <= 14 && (
-        <button onClick={() => switchTab('subscription')} className={`w-full text-left mb-6 rounded-2xl border px-5 py-4 text-sm font-medium transition-colors ${notice < 0 ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100' : 'bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100'}`}>
+        <button onClick={() => switchTab('subscription')} className={`w-full text-left mb-6 rounded-2xl border px-5 py-4 text-sm font-medium transition-colors flex items-center gap-3 ${notice < 0 ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100' : 'bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100'}`}>
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" /></svg>
           {notice < 0
-            ? `⚠️ A listing subscription has expired (${fmtDate(businesses.find((b) => b.subscriptionExpiresOn && daysUntil(b.subscriptionExpiresOn) === notice)?.subscriptionExpiresOn)}). Your page is hidden from visitors until renewed.`
-            : `⏳ Subscription expiring in ${notice} day${notice === 1 ? '' : 's'} — renew now to keep your page visible.`}
-          <span className="underline ml-2">Renew →</span>
+            ? `A listing subscription has expired (${fmtDate(businesses.find((b) => b.subscriptionExpiresOn && daysUntil(b.subscriptionExpiresOn) === notice)?.subscriptionExpiresOn)}). Your page is hidden from visitors until renewed.`
+            : `Subscription expiring in ${notice} day${notice === 1 ? '' : 's'} — renew now to keep your page visible.`}
+          <span className="underline ml-auto shrink-0">Renew →</span>
         </button>
       )}
 
@@ -215,36 +218,42 @@ function OverviewSec({ bizId, summary }: { bizId: number; summary?: BusinessSumm
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="bg-white rounded-2xl border p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{detail.name}</h2>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              {/* Unambiguous subscription state */}
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${sub.cls}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${sub.dot}`} />{sub.label}
-              </span>
-              {!detail.isActive ? (
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
-                  Pending admin approval — not shown on the website yet
+      <div className="card overflow-hidden">
+        <div className={`h-1.5 w-full ${getTheme(detail.theme).topBar}`} />
+        <div className="p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{detail.name}</h2>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {/* Unambiguous subscription state */}
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${sub.cls}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${sub.dot}`} />{sub.label}
                 </span>
-              ) : (
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${detail.isPublished ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {detail.isPublished ? 'Published — visible to public' : 'Draft — hidden from public'}
+                {!detail.isActive ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
+                    Pending admin approval — not shown on the website yet
+                  </span>
+                ) : (
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${detail.isPublished ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                    {detail.isPublished ? 'Published — visible to public' : 'Draft — hidden from public'}
+                  </span>
+                )}
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getTheme(detail.theme).chip}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${getTheme(detail.theme).topBar}`} />Theme: {getTheme(detail.theme).name}
                 </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => window.open(`/b/${detail.slug}`, '_blank')} className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50">Preview page ↗</button>
+              {detail.isActive && !detail.isPublished && (
+                <button
+                  onClick={async () => { await api.put(`/businesses/${bizId}/publish`, { isPublished: true }); const { data } = await api.get(`/businesses/${bizId}`); setDetail(data) }}
+                  className="px-4 py-2 rounded-xl bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700"
+                >
+                  Publish Now
+                </button>
               )}
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => window.open(`/b/${detail.slug}`, '_blank')} className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50">Preview page ↗</button>
-            {detail.isActive && !detail.isPublished && (
-              <button
-                onClick={async () => { await api.put(`/businesses/${bizId}/publish`, { isPublished: true }); const { data } = await api.get(`/businesses/${bizId}`); setDetail(data) }}
-                className="px-4 py-2 rounded-xl bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700"
-              >
-                Publish Now
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -832,8 +841,9 @@ function SubSec({ bizId }: { bizId: number }) {
       )}
 
       {hasPending && (
-        <div className="rounded-2xl bg-yellow-50 border border-yellow-200 px-5 py-4 text-sm text-yellow-800">
-          ⏳ A renewal request is awaiting payment confirmation. Online payment is coming soon — please coordinate with the administrator to activate it.
+        <div className="rounded-2xl bg-yellow-50 border border-yellow-200 px-5 py-4 text-sm text-yellow-800 flex items-center gap-3">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" /></svg>
+          A renewal request is awaiting payment confirmation. Online payment is coming soon — please coordinate with the administrator to activate it.
         </div>
       )}
       {notice && !hasPending && <p className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-700">{notice}</p>}
@@ -974,7 +984,7 @@ function OrdersSec() {
                   {o.customerPhone && <p className="text-xs text-gray-500">{o.customerPhone}{o.customerEmail ? ` · ${o.customerEmail}` : ''}</p>}
                   {o.deliveryAddress && (
                     <div className="mt-2 rounded-lg bg-primary-50 border border-primary-100 px-3 py-2 text-xs">
-                      <p className="font-bold text-primary-700 uppercase tracking-wide">🚚 Deliver to</p>
+                      <p className="font-bold text-primary-700 uppercase tracking-wide flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M5 4h10l5 5v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 4v5h5" /></svg>Deliver to</p>
                       <p className="text-gray-800 font-medium mt-0.5">{o.deliveryName}</p>
                       {o.deliveryPhone && <p className="text-gray-600">{o.deliveryPhone}</p>}
                       <p className="text-gray-600">{o.deliveryAddress}</p>
@@ -1020,30 +1030,6 @@ function OrdersSec() {
 }
 
 /* ---------- Inventory & Reports ---------- */
-
-export function StatCard({ label, value, tint, icon }: { label: string; value: string; tint?: 'green' | 'red'; icon?: string }) {
-  const palette = tint === 'green'
-    ? { glow: 'bg-emerald-200/50', chip: 'from-emerald-500 to-emerald-600', value: 'text-emerald-600' }
-    : tint === 'red'
-      ? { glow: 'bg-red-200/50', chip: 'from-red-500 to-red-600', value: 'text-red-500' }
-      : { glow: 'bg-primary-200/50', chip: 'from-primary-500 to-primary-700', value: 'text-gray-900' }
-  return (
-    <div className="card p-5 relative overflow-hidden hover:-translate-y-0.5 transition-transform duration-300">
-      <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl ${palette.glow}`} />
-      <div className="relative flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-          <p className={`text-2xl font-extrabold mt-1.5 tracking-tight truncate ${palette.value}`}>{value}</p>
-        </div>
-        {icon && (
-          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${palette.chip} flex items-center justify-center text-xl shadow-md shrink-0`}>
-            {icon}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
 
 export function DonutChart({ inStock, outOfStock }: { inStock: number; outOfStock: number }) {
   const total = inStock + outOfStock
@@ -1217,17 +1203,17 @@ function InventorySec({ bizId }: { bizId: number }) {
       <h2 className="text-2xl font-bold text-gray-900">Inventory</h2>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total products" value={String(products.length)} icon="📦" />
-        <StatCard label="In stock" value={String(inStock.length)} tint="green" icon="✅" />
-        <StatCard label="Out of stock" value={String(outOfStock.length)} tint="red" icon="⚠️" />
-        <StatCard label="Stock value" value={`₹${value.toLocaleString('en-IN')}`} icon="💰" />
+        <StatCard label="Total products" value={String(products.length)} icon="package" />
+        <StatCard label="In stock" value={String(inStock.length)} tint="green" icon="shield" />
+        <StatCard label="Out of stock" value={String(outOfStock.length)} tint="red" icon="alert" />
+        <StatCard label="Stock value" value={`₹${value.toLocaleString('en-IN')}`} icon="coins" />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Sold — today" value={`${sold?.soldToday ?? 0} units`} icon="🔥" />
-        <StatCard label="Sold — this month" value={`${sold?.soldThisMonth ?? 0} units`} icon="📅" />
-        <StatCard label="Sold — this year" value={`${sold?.soldThisYear ?? 0} units`} icon="🗓️" />
-        <StatCard label="Sales this month" value={`₹${(sold?.revenueThisMonth ?? 0).toLocaleString('en-IN')}`} icon="💵" />
+        <StatCard label="Sold — today" value={`${sold?.soldToday ?? 0} units`} icon="fire" />
+        <StatCard label="Sold — this month" value={`${sold?.soldThisMonth ?? 0} units`} icon="calendar" />
+        <StatCard label="Sold — this year" value={`${sold?.soldThisYear ?? 0} units`} icon="calendar" />
+        <StatCard label="Sales this month" value={`₹${(sold?.revenueThisMonth ?? 0).toLocaleString('en-IN')}`} icon="coins" />
       </div>
 
       <div className="bg-white rounded-2xl border p-6">
@@ -1330,10 +1316,10 @@ function ReportsSec({ bizId }: { bizId: number }) {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total products" value={String(products.length)} icon="📦" />
-        <StatCard label="In stock" value={String(inStock.length)} tint="green" icon="✅" />
-        <StatCard label="Out of stock" value={String(outOfStock.length)} tint="red" icon="⚠️" />
-        <StatCard label="Stock value" value={`₹${value.toLocaleString('en-IN')}`} icon="💰" />
+        <StatCard label="Total products" value={String(products.length)} icon="package" />
+        <StatCard label="In stock" value={String(inStock.length)} tint="green" icon="shield" />
+        <StatCard label="Out of stock" value={String(outOfStock.length)} tint="red" icon="alert" />
+        <StatCard label="Stock value" value={`₹${value.toLocaleString('en-IN')}`} icon="coins" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
